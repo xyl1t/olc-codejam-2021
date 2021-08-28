@@ -19,7 +19,7 @@ OBJS := $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.o,$(SOURCES))
 # CXX := clang++
 CXXFLAGS := -arch x86_64 -std=c++17 -Wall -Iinclude
 LDFLAGS := -Llib
-LDLIBS := -framework OpenGL -framework GLUT -framework Carbon -lpng -lsoloud_static
+LDLIBS := -framework OpenGL -framework GLUT -framework Carbon -lpng -lsoloud_static -lbox2d
 # Include dependencies
 deps := $(patsubst %.o,%.d,$(OBJS))
 -include $(deps)
@@ -37,7 +37,7 @@ debug: $(PROJECT)
 
 web: CXX := em++
 web: CXXFLAGS := -std=c++17 -O2 -Iinclude
-web: LDLIBS := -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 -s USE_SDL_MIXER=2 --preload-file ./assets $(SRCDIR)/soloud.o
+web: LDLIBS := -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 -s USE_SDL_MIXER=2 -lbox2d --preload-file ./assets $(SRCDIR)/soloud.o
 web: PROJECT := $(BUILDDIR)/$(PROJECTNAME).html
 web: $(PROJECT)
 

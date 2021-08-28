@@ -10,6 +10,8 @@
 #define CIDR_IMPLEMENTATION
 #include "cidr.hpp"
 
+#include "box2d/box2d.h"
+
 #include <vector>
 
 #if 0
