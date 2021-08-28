@@ -1,8 +1,8 @@
 ### Makefile ###
 
 # Usage: 
-# make 		 -> compile project as executable
-# make debug -> compile project in debug mode
+# make 		 -> build project in release mode
+# make debug -> build project in debug mode
 # make web   -> compile project for web
 # make clean -> clean up build
 
@@ -17,7 +17,7 @@ PROJECT := $(BUILDDIR)/$(PROJECTNAME)
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.o,$(SOURCES))
 # CXX := clang++
-CXXFLAGS := -arch x86_64 -std=c++17 -Wall -Iinclude
+CXXFLAGS := -arch x86_64 -std=c++17 -Iinclude -O2
 LDFLAGS := -Llib
 LDLIBS := -framework OpenGL -framework GLUT -framework Carbon -lpng -lsoloud_static -lbox2d
 # Include dependencies
@@ -32,7 +32,7 @@ multi:
 	$(MAKE) -j8 all
 all: $(PROJECT)
 
-debug: CXXFLAGS += -DDEBUG -g
+debug: CXXFLAGS := -arch x86_64 -std=c++17 -Wall -Iinclude -DDEBUG -g
 debug: $(PROJECT)
 
 web: CXX := em++

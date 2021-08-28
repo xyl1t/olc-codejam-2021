@@ -4,36 +4,18 @@
 #include "olcPGEX_AudioListener.h"
 #define AUDIO_SOURCE_IMPLEMENTATION
 #include "olcPGEX_AudioSource.h"
-
 #include "olcPGEX_Animator2D.h"
-
 #define CIDR_IMPLEMENTATION
 #include "cidr.hpp"
-
 #include "box2d/box2d.h"
 
 #include <vector>
+#include <algorithm>
 
-#if 0
-clang++ -arch x86_64 -std=c++17 -mmacosx-version-min=10.15 -Wall -framework OpenGL -framework GLUT -framework Carbon -lpng main.cpp -o test 
-clang++ main.cpp -o pge -I/Users/maratisaw/Downloads/soloud20200207/include -L/Users/maratisaw/Downloads/soloud20200207/lib -Bstatic -static-libgcc -static-libstdc++ -lX11 -lGL -lpthread -lpng -lstdc++fs -lsoloud_static -lSDL2 -ldl
-em++ -std=c++17 -O2 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 main.cpp -o pge.html
-clang++ -arch x86_64 -std=c++17 main.cpp -I./include -L./lib -framework OpenGL -framework GLUT -framework Carbon -lpng -lSDL2 -lsoloud -o pge
-clang++ -arch x86_64 -std=c++17 main.cpp -Iinclude -Llib -framework OpenGL -framework GLUT -framework Carbon -lpng -lSDL2 -lSDL2_mixer -lsoloud_static -ldl -o pge
-
-em++ -std=c++17 -O2 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 -s USE_SDL_MIXER=2 main.cpp -o pge.html --preload-file ./assets
-em++ -std=c++17 -O2 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 -s USE_SDL_MIXER=2 main.cpp soloud.o -o pge.html --preload-file ./assets
-
-em++ -std=c++17 -O2 -s ALLOW_MEMORY_GROWTH=1 -s MAX_WEBGL_VERSION=2 -s MIN_WEBGL_VERSION=2 -s USE_LIBPNG=1 -s USE_SDL_MIXER=2 -Iinclude main.cpp soloud.o -o pge.html --preload-file ./assets
-clang++ -arch x86_64 -std=c++17 main.cpp -Iinclude -Llib -framework OpenGL -framework GLUT -framework Carbon -lpng -lSDL2 -lSDL2_mixer -lsoloud_static -ldl -o pge
-#endif
-
-// Override base class with your custom functionality
 class Test : public olc::PixelGameEngine {
 public:
 	Test()
 	{
-		// Name your application
 		sAppName = "Test";
 	}
 
@@ -122,14 +104,13 @@ public:
 			for (int x = 0; x < normalMap.Sprite()->width; x++) {
 				normalPixel = normalMap.Sprite()->GetPixel(x, y);
 				normals = {normalPixel.r / 255.f - 0.5f, normalPixel.g / 255.f - 0.5f, normalPixel.b / 255.f};
-				tem::vec3 lightRay = tem::vec3(light.x - x, y - light.y, 60);
+				tem::vec3 lightRay = tem::vec3(light.x - x, y - light.y, 50);
 				
 				lightRay.normalize();
 				normals.normalize();
 				
-				float v = lightRay.x * normals.x + lightRay.y * normals.y + lightRay.z * normals.z;
-				if (v > 0) 
-					Draw({x + offset.x, y + offset.y}, olc::Pixel(v * 255, v * 255, v * 255));
+				float v = std::max(0.f, lightRay.x * normals.x + lightRay.y * normals.y + lightRay.z * normals.z);
+				Draw({x + offset.x, y + offset.y}, olc::Pixel(v * 255, v * 255, v * 255));
 					// Draw({x + offset.x, y + offset.y}, texture.Sprite()->GetPixel(x, y) * v);
 			}
 		}
@@ -138,32 +119,10 @@ public:
 	}
 };
 
-#if 0
-vec2 pixel = gl_FragCoord.xy / res.xy;
-vec4 color = vec4(1.0);//solid white
-//Distance of the current pixel from the light position
-float dist = distance(gl_FragCoord.xy,light.xy);
-vec3 NormalVector = texture2D(norm,pixel).xyz;
-vec3 LightVector = vec3(light.x - gl_FragCoord.x,light.y - gl_FragCoord.y,60.0);
-NormalVector.x -= 0.5;
-NormalVector.y -= 0.5;
-NormalVector = normalize(NormalVector);
-LightVector = normalize(LightVector);
-
-
-if(light.z * res.x > dist){
-	float diffuse = max(dot( NormalVector, LightVector ),0.0);
-	float distanceFactor = (1.0 - dist/(light.z * res.x));
-	gl_FragColor = color * diffuse * distanceFactor;
-} else {
-	gl_FragColor = vec4(0.0);
-}
-#endif
-
 int main(int argc, char** argv) {
 
 	Test demo;
-	if (demo.Construct(600, 400, 2, 2))
+	if (demo.Construct(640, 480, 2, 2))
 		demo.Start();
 	
 	return 0;
