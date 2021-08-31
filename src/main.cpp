@@ -21,6 +21,10 @@
  *
  */
 
+static inline float lerp(float a, float b, float t) {
+	return a + t * (b - a);
+}
+
 class Test : public olc::PixelGameEngine {
 public:
 	Test() {
@@ -30,24 +34,25 @@ public:
 	const float SCALE = 1.f;
 	
 	std::vector<std::vector<char>> mapData {
-		{ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', '#', ' ', '#', ' ', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' },
+		{ '#', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
 		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
 		{ '#', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', 'P', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
-		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', 'P', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', '#', '#', ' ', '#', '#', '#', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', ' ', '#', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#', '#', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', '#', '#', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', ' ', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
+		{ '#', ' ', ' ', ' ', ' ', '#', '#', '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
 		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
 		{ '#', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', '#' },
 		{ '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#', '#' },
 	};
-	Map map;
+	Map map; // TODO: make multiple maps (levels) and have a pointer to current one
+	b2World* world;
 	
 	Assets assets;
 	
@@ -64,8 +69,9 @@ public:
 		Clear(olc::Pixel(0xff3c3b40));
 		
 		/* INPUT ************************/
-		static float playerX{};
-		static float playerY{};
+		// TODO: move this to player class
+		static float playerX{map.spawnPoint.x};
+		static float playerY{map.spawnPoint.y};
 		if (GetKey(olc::Key::UP).bHeld || GetKey(olc::Key::W).bHeld) {
 			playerY -= 6 * fElapsedTime;
 		}
@@ -79,17 +85,17 @@ public:
 			playerX += 6 * fElapsedTime;
 		}
 		
-		map.camera.x = playerX;
-		map.camera.y = playerY;
+		map.camera.x = lerp(map.camera.x, playerX, 5.f * fElapsedTime);
+		map.camera.y = lerp(map.camera.y, playerY, 5.f * fElapsedTime);
 		
 		/* GAME LOGIC *******************/
 
 		
 		/* RENDER ***********************/
-		float visibleTilesX = std::min(ScreenWidth() / assets.spriteWidth, map.width);
-		float visibleTilesY = std::min(ScreenHeight() / assets.spriteHeight, map.height);
-		float offsetX = map.camera.x - visibleTilesX/2.f;
-		float offsetY = map.camera.y - visibleTilesY/2.f;
+		float visibleTilesX = std::min(ScreenWidth() / assets.spriteWidth / SCALE,   (float)map.width);
+		float visibleTilesY = std::min(ScreenHeight() / assets.spriteHeight / SCALE, (float)map.height);
+		float offsetX = map.camera.x - visibleTilesX/2.f + 0.5f;
+		float offsetY = map.camera.y - visibleTilesY/2.f + 0.5f;
 		offsetX = std::max(std::min(offsetX, map.width - visibleTilesX), 0.f);
 		offsetY = std::max(std::min(offsetY, map.height - visibleTilesY), 0.f);
 		
@@ -106,29 +112,44 @@ public:
 				int spriteY = index / (assets.spriteAtlasWidth / assets.spriteWidth) * assets.spriteHeight;
 				
 				olc::vf2d tileLocation {
-					(float)i * assets.spriteWidth + offsetX - tileOffsetX, 
-					(float)j * assets.spriteHeight + offsetY - tileOffsetY
+					((float)i * assets.spriteWidth  + offsetX - tileOffsetX) * SCALE, 
+					((float)j * assets.spriteHeight + offsetY - tileOffsetY) * SCALE
 				};
 				
 				DrawPartialDecal(
 					tileLocation, 
-					{(float)assets.spriteWidth, (float)assets.spriteHeight},
+					{(float)assets.spriteWidth * SCALE, (float)assets.spriteHeight * SCALE},
 					assets.spriteAtlas.Decal(),
 					{(float)spriteX, (float)spriteY}, 
-					{(float)assets.spriteWidth * SCALE, (float)assets.spriteHeight * SCALE}
+					{(float)assets.spriteWidth, (float)assets.spriteHeight}
 				);
+				// Body b = map.Get(i + offsetX, j + offsetY);
+				// if(b.body) {
+				// 	// b.body->GetPosition().x;
+				// 	// b.body->GetPosition().y;
+				// 	tileLocation = {
+				// 		((float)b.body->GetPosition().x * assets.spriteWidth  + offsetX - tileOffsetX) * SCALE, 
+				// 		((float)b.body->GetPosition().y * assets.spriteHeight + offsetY - tileOffsetY) * SCALE
+				// 	};
+				// 	FillRectDecal(
+				// 		tileLocation,
+				// 		{(float)(assets.spriteWidth * SCALE), (float)(assets.spriteHeight * SCALE)},
+				// 		{255, 255, 255, 128}
+				// 	);
+				// }
+				
 			}
 		}
 		
 		DrawPartialDecal(
 			{
-				(float)playerX * assets.spriteWidth - offsetX * assets.spriteWidth, 
-				(float)playerY * assets.spriteHeight - offsetY * assets.spriteWidth
+				((float)playerX * assets.spriteWidth  - offsetX * assets.spriteWidth) * SCALE,
+				((float)playerY * assets.spriteHeight - offsetY * assets.spriteWidth) * SCALE
 			}, 
 			{(float)assets.spriteWidth * SCALE, (float)assets.spriteHeight * SCALE},
 			assets.spriteAtlas.Decal(),
 			{(float)0, (float)0}, 
-			{(float)assets.spriteWidth * SCALE, (float)assets.spriteHeight * SCALE}
+			{(float)assets.spriteWidth, (float)assets.spriteHeight}
 		);
 	
 		return true;
@@ -138,7 +159,7 @@ public:
 int main(int argc, char** argv) {
 
 	Test demo;
-	if (demo.Construct(200, 150, 4, 4))
+	if (demo.Construct(200*2, 150*2, 2, 2))
 		demo.Start();
 	
 	return 0;

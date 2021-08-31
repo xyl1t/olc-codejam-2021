@@ -1,3 +1,4 @@
 build/
 paper.txt
 .DS_Store
+.vscode/
