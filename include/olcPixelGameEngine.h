@@ -3,7 +3,7 @@
 	olcPixelGameEngine.h
 
 	+-------------------------------------------------------------+
-	|           OneLoneCoder Pixel Game Engine v2.16              |
+	|           OneLoneCoder Pixel Game Engine v2.17              |
 	|  "What do you need? Pixels... Lots of Pixels..." - javidx9  |
 	+-------------------------------------------------------------+
 
@@ -168,12 +168,12 @@
 
 	Thanks
 	~~~~~~
-	I'd like to extend thanks to Ian McKay, Bispoo, Eremiell, slavka, gurkanctn, Phantim,
+	I'd like to extend thanks to Ian McKay, Bispoo, Eremiell, slavka, Kwizatz77, gurkanctn, Phantim,
 	IProgramInCPP, JackOJC, KrossX, Huhlig, Dragoneye, Appa, JustinRichardsMusic, SliceNDice, 
 	dandistine,	Ralakus, Gorbit99, raoul, joshinils, benedani, Moros1138, Alexio, SaladinAkara 
 	& MagetzUb for advice, ideas and testing, and I'd like to extend my appreciation to the
-	230K YouTube followers,	80+ Patreons and 10K Discord server members who give me
-	the motivation to keep going with all this :D
+	250K YouTube followers,	80+ Patreons, 4.8K Twitch followers and 10K Discord server members 
+	who give me	the motivation to keep going with all this :D
 
 	Significant Contributors: @Moros1138, @SaladinAkara, @MaGetzUb, @slavka,
 							  @Dragoneye, @Gorbit99, @dandistine & @Mumflr
@@ -277,7 +277,10 @@
 		  +DrawRotatedStringDecal()/DrawRotatedStringPropDecal() (thanks Oso-Grande/Sopadeoso (PR #209))
 		  =Using olc::Renderable for layer surface
 		  +Major Mac and GLUT Update (thanks Mumflr)
-		  
+	2.17: +Clipping for DrawLine() functions
+		  +Reintroduced sub-pixel decals
+		  +Modified DrawPartialDecal() to quantise and correctly sample from tile atlasses
+		  +olc::Sprite::GetPixel() - Clamp Mode
 
 		  
     !! Apple Platforms will not see these updates immediately - Sorry, I dont have a mac to test... !!
@@ -358,7 +361,7 @@ int main()
 #include <cstring>
 #pragma endregion
 
-#define PGE_VER 216
+#define PGE_VER 217
 
 // O------------------------------------------------------------------------------O
 // | COMPILER CONFIGURATION ODDITIES                                              |
@@ -732,7 +735,7 @@ namespace olc
 	public:
 		int32_t width = 0;
 		int32_t height = 0;
-		enum Mode { NORMAL, PERIODIC };
+		enum Mode { NORMAL, PERIODIC, CLAMP };
 		enum Flip { NONE = 0, HORIZ = 1, VERT = 2 };
 
 	public:
@@ -810,6 +813,7 @@ namespace olc
 		std::vector<olc::vf2d> pos;
 		std::vector<olc::vf2d> uv;
 		std::vector<float> w;
+		std::vector<float> z; //
 		std::vector<olc::Pixel> tint;
 		olc::DecalMode mode = olc::DecalMode::NORMAL;
 		uint32_t points = 0;
@@ -1036,6 +1040,8 @@ namespace olc
 		void GradientFillRectDecal(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel colTL, const olc::Pixel colBL, const olc::Pixel colBR, const olc::Pixel colTR);
 		// Draws an arbitrary convex textured polygon using GPU
 		void DrawPolygonDecal(olc::Decal* decal, const std::vector<olc::vf2d>& pos, const std::vector<olc::vf2d>& uv, const olc::Pixel tint = olc::WHITE);
+		void DrawPolygonDecal(olc::Decal* decal, const std::vector<olc::vf2d>& pos, const std::vector<float>& depth, const std::vector<olc::vf2d>& uv, const olc::Pixel tint = olc::WHITE);
+
 		// Draws a line in Decal Space
 		void DrawLineDecal(const olc::vf2d& pos1, const olc::vf2d& pos2, Pixel p = olc::WHITE);
 		void DrawRotatedStringDecal(const olc::vf2d& pos, const std::string& sText, const float fAngle, const olc::vf2d& center = { 0.0f, 0.0f }, const olc::Pixel col = olc::WHITE, const olc::vf2d& scale = { 1.0f, 1.0f });
@@ -1046,6 +1052,9 @@ namespace olc
 		void ClearBuffer(Pixel p, bool bDepth = true);
 		// Returns the font image
 		olc::Sprite* GetFontSprite();
+
+		// Clip a line segment to visible area
+		bool ClipLineToScreen(olc::vi2d& in_p1, olc::vi2d& in_p2);
 
 	public: // Branding
 		std::string sAppName;
@@ -1311,7 +1320,10 @@ namespace olc
 		}
 		else
 		{
-			return pColData[abs(y % height) * width + abs(x % width)];
+			if (modeSample == olc::Sprite::Mode::PERIODIC)
+				return pColData[abs(y % height) * width + abs(x % width)];
+			else
+				return pColData[std::max(0, std::min(y, height-1)) * width + std::max(0, std::min(x, width-1))];
 		}
 	}
 
@@ -1870,6 +1882,12 @@ namespace olc
 
 		auto rol = [&](void) { pattern = (pattern << 1) | (pattern >> 31); return pattern & 1; };
 
+		olc::vi2d p1(x1, y1), p2(x2, y2);
+		if (!ClipLineToScreen(p1, p2))
+			return;
+		x1 = p1.x; y1 = p1.y;
+		x2 = p2.x; y2 = p2.y;
+
 		// straight lines idea by gurkanctn
 		if (dx == 0) // Line is vertical
 		{
@@ -2046,6 +2064,40 @@ namespace olc
 
 	olc::Sprite* PixelGameEngine::GetFontSprite()
 	{ return fontSprite; }
+
+	bool PixelGameEngine::ClipLineToScreen(olc::vi2d& in_p1, olc::vi2d& in_p2)
+	{
+		// https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
+		static constexpr int SEG_I = 0b0000, SEG_L = 0b0001, SEG_R = 0b0010, SEG_B = 0b0100, SEG_T = 0b1000;
+		auto Segment = [&vScreenSize = vScreenSize](const olc::vi2d& v)
+		{
+			int i = SEG_I;
+			if (v.x < 0) i |= SEG_L; else if (v.x > vScreenSize.x) i |= SEG_R;
+			if (v.y < 0) i |= SEG_B; else if (v.y > vScreenSize.y) i |= SEG_T;
+			return i;
+		};
+
+		int s1 = Segment(in_p1), s2 = Segment(in_p2);
+
+		while (true)
+		{
+			if (!(s1 | s2))	  return true;
+			else if (s1 & s2) return false;
+			else
+			{
+				int s3 = s2 > s1 ? s2 : s1;
+				olc::vi2d n;
+				if (s3 & SEG_T) { n.x = in_p1.x + (in_p2.x - in_p1.x) * (vScreenSize.y - in_p1.y) / (in_p2.y - in_p1.y); n.y = vScreenSize.y; }
+				else if (s3 & SEG_B) { n.x = in_p1.x + (in_p2.x - in_p1.x) * (0 - in_p1.y) / (in_p2.y - in_p1.y); n.y = 0; }
+				else if (s3 & SEG_R) { n.x = vScreenSize.x; n.y = in_p1.y + (in_p2.y - in_p1.y) * (vScreenSize.x - in_p1.x) / (in_p2.x - in_p1.x); }
+				else if (s3 & SEG_L) { n.x = 0; n.y = in_p1.y + (in_p2.y - in_p1.y) * (0 - in_p1.x) / (in_p2.x - in_p1.x); }
+				if (s3 == s1) { in_p1 = n; s1 = Segment(in_p1); }
+				else { in_p2 = n; s2 = Segment(in_p2); }
+			}
+		}
+		return true;
+	}
+
 
 	void PixelGameEngine::FillRect(const olc::vi2d& pos, const olc::vi2d& size, Pixel p)
 	{ FillRect(pos.x, pos.y, size.x, size.y, p); }
@@ -2300,25 +2352,31 @@ namespace olc
 	{
 		olc::vf2d vScreenSpacePos =
 		{
-			(std::floor(pos.x) * vInvScreenSize.x) * 2.0f - 1.0f,
-			((std::floor(pos.y) * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
+			  (pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+			-((pos.y * vInvScreenSize.y) * 2.0f - 1.0f)
 		};
 
+		
 		olc::vf2d vScreenSpaceDim =
 		{
-			vScreenSpacePos.x + (2.0f * source_size.x * vInvScreenSize.x) * scale.x,
-			vScreenSpacePos.y - (2.0f * source_size.y * vInvScreenSize.y) * scale.y
+			  ((pos.x + source_size.x * scale.x) * vInvScreenSize.x) * 2.0f - 1.0f,
+			-(((pos.y + source_size.y * scale.y) * vInvScreenSize.y) * 2.0f - 1.0f)
 		};
+
+		olc::vf2d vWindow = olc::vf2d(vViewSize);
+		olc::vf2d vQuantisedPos = ((vScreenSpacePos * vWindow) + olc::vf2d(0.5f, 0.5f)).floor() / vWindow;
+		olc::vf2d vQuantisedDim = ((vScreenSpaceDim * vWindow) + olc::vf2d(0.5f, -0.5f)).ceil() / vWindow;
 
 		DecalInstance di;
 		di.points = 4;
 		di.decal = decal;
 		di.tint = { tint, tint, tint, tint };
-		di.pos = { { vScreenSpacePos.x, vScreenSpacePos.y }, { vScreenSpacePos.x, vScreenSpaceDim.y }, { vScreenSpaceDim.x, vScreenSpaceDim.y }, { vScreenSpaceDim.x, vScreenSpacePos.y } };
-		olc::vf2d uvtl = source_pos * decal->vUVScale;
-		olc::vf2d uvbr = uvtl + (source_size * decal->vUVScale);
+		di.pos = { { vQuantisedPos.x, vQuantisedPos.y }, { vQuantisedPos.x, vQuantisedDim.y }, { vQuantisedDim.x, vQuantisedDim.y }, { vQuantisedDim.x, vQuantisedPos.y } };
+		olc::vf2d uvtl = (source_pos + olc::vf2d(0.0001f, 0.0001f)) * decal->vUVScale;
+		olc::vf2d uvbr = (source_pos + source_size - olc::vf2d(0.0001f, 0.0001f)) * decal->vUVScale;
 		di.uv = { { uvtl.x, uvtl.y }, { uvtl.x, uvbr.y }, { uvbr.x, uvbr.y }, { uvbr.x, uvtl.y } };
 		di.w = { 1,1,1,1 };
+		di.z = { 0,0,0,0 };
 		di.mode = nDecalMode;
 		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
 	}
@@ -2327,8 +2385,8 @@ namespace olc
 	{
 		olc::vf2d vScreenSpacePos =
 		{
-			(std::floor(pos.x) * vInvScreenSize.x) * 2.0f - 1.0f,
-			((std::floor(pos.y) * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
+			(pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+			((pos.y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
 		};
 
 		olc::vf2d vScreenSpaceDim =
@@ -2346,6 +2404,7 @@ namespace olc
 		olc::vf2d uvbr = uvtl + ((source_size) * decal->vUVScale);
 		di.uv = { { uvtl.x, uvtl.y }, { uvtl.x, uvbr.y }, { uvbr.x, uvbr.y }, { uvbr.x, uvtl.y } };
 		di.w = { 1,1,1,1 };
+		di.z = { 0,0,0,0 };
 		di.mode = nDecalMode;
 		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
 	}
@@ -2355,8 +2414,8 @@ namespace olc
 	{
 		olc::vf2d vScreenSpacePos =
 		{
-			(std::floor(pos.x) * vInvScreenSize.x) * 2.0f - 1.0f,
-			((std::floor(pos.y) * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
+			(pos.x * vInvScreenSize.x) * 2.0f - 1.0f,
+			((pos.y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f
 		};
 
 		olc::vf2d vScreenSpaceDim =
@@ -2372,6 +2431,7 @@ namespace olc
 		di.pos = { { vScreenSpacePos.x, vScreenSpacePos.y }, { vScreenSpacePos.x, vScreenSpaceDim.y }, { vScreenSpaceDim.x, vScreenSpaceDim.y }, { vScreenSpaceDim.x, vScreenSpacePos.y } };
 		di.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
 		di.w = { 1, 1, 1, 1 };
+		di.z = { 0,0,0,0 };
 		di.mode = nDecalMode;
 		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
 	}
@@ -2383,6 +2443,7 @@ namespace olc
 		di.pos.resize(elements);
 		di.uv.resize(elements);
 		di.w.resize(elements);
+		di.z.resize(elements);
 		di.tint.resize(elements);
 		di.points = elements;
 		for (uint32_t i = 0; i < elements; i++)
@@ -2391,6 +2452,7 @@ namespace olc
 			di.uv[i] = uv[i];
 			di.tint[i] = col[i];
 			di.w[i] = 1.0f;
+			di.z[i] = 0.0f;
 		}
 		di.mode = nDecalMode;
 		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
@@ -2404,6 +2466,7 @@ namespace olc
 		di.pos.resize(di.points);
 		di.uv.resize(di.points);
 		di.w.resize(di.points);
+		di.z.resize(di.points);
 		di.tint.resize(di.points);
 		for (uint32_t i = 0; i < di.points; i++)
 		{
@@ -2416,6 +2479,29 @@ namespace olc
 		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
 	}
 
+	void PixelGameEngine::DrawPolygonDecal(olc::Decal* decal, const std::vector<olc::vf2d>& pos, const std::vector<float>& depth, const std::vector<olc::vf2d>& uv, const olc::Pixel tint)
+	{
+		DecalInstance di;
+		di.decal = decal;
+		di.points = uint32_t(pos.size());
+		di.pos.resize(di.points);
+		di.uv.resize(di.points);
+		di.w.resize(di.points);
+		di.z.resize(di.points);
+		di.tint.resize(di.points);
+		for (uint32_t i = 0; i < di.points; i++)
+		{
+			di.pos[i] = { (pos[i].x * vInvScreenSize.x) * 2.0f - 1.0f, ((pos[i].y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f };
+			di.uv[i] = uv[i];
+			di.tint[i] = tint;
+			di.w[i] = 1.0f;
+			di.z[i] = depth[i];
+		}
+		di.mode = nDecalMode;
+		vLayers[nTargetLayer].vecDecalInstance.push_back(di);
+	}
+
+
 	void PixelGameEngine::DrawLineDecal(const olc::vf2d& pos1, const olc::vf2d& pos2, Pixel p)
 	{
 		DecalInstance di;
@@ -2424,6 +2510,7 @@ namespace olc
 		di.pos.resize(di.points);
 		di.uv.resize(di.points);
 		di.w.resize(di.points);
+		di.z.resize(di.points);
 		di.tint.resize(di.points);
 		di.pos[0] = { (pos1.x * vInvScreenSize.x) * 2.0f - 1.0f, ((pos1.y * vInvScreenSize.y) * 2.0f - 1.0f) * -1.0f };
 		di.uv[0] = { 0.0f, 0.0f };
@@ -2439,7 +2526,8 @@ namespace olc
 
 	void PixelGameEngine::FillRectDecal(const olc::vf2d& pos, const olc::vf2d& size, const olc::Pixel col)
 	{
-		std::array<olc::vf2d, 4> points = { { {pos}, {pos.x, pos.y + size.y}, {pos + size}, {pos.x + size.x, pos.y} } };
+		olc::vf2d vNewSize = (size - olc::vf2d(0.375f, 0.375f)).ceil();
+		std::array<olc::vf2d, 4> points = { { {pos}, {pos.x, pos.y + vNewSize.y}, {pos + vNewSize}, {pos.x + vNewSize.x, pos.y} } };
 		std::array<olc::vf2d, 4> uvs = { {{0,0},{0,0},{0,0},{0,0}} };
 		std::array<olc::Pixel, 4> cols = { {col, col, col, col} };
 		DrawExplicitDecal(nullptr, points.data(), uvs.data(), cols.data(), 4);
@@ -2460,6 +2548,7 @@ namespace olc
 		di.pos.resize(4);
 		di.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
 		di.w = { 1, 1, 1, 1 };
+		di.z = { 0,0,0,0 };
 		di.tint = { tint, tint, tint, tint };
 		di.points = 4;
 		di.pos[0] = (olc::vf2d(0.0f, 0.0f) - center) * scale;
@@ -2486,6 +2575,7 @@ namespace olc
 		di.points = 4;
 		di.tint = { tint, tint, tint, tint };
 		di.w = { 1, 1, 1, 1 };
+		di.z = { 0,0,0,0 };
 		di.pos.resize(4);
 		di.pos[0] = (olc::vf2d(0.0f, 0.0f) - center) * scale;
 		di.pos[1] = (olc::vf2d(0.0f, source_size.y) - center) * scale;
@@ -2513,6 +2603,7 @@ namespace olc
 		di.decal = decal;
 		di.tint = { tint, tint, tint, tint };
 		di.w = { 1, 1, 1, 1 };
+		di.z = { 0,0,0,0 };
 		di.pos.resize(4);
 		di.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
 		olc::vf2d center;
@@ -2548,6 +2639,7 @@ namespace olc
 		di.decal = decal;
 		di.tint = { tint, tint, tint, tint };
 		di.w = { 1, 1, 1, 1 };
+		di.z = { 0,0,0,0 };
 		di.pos.resize(4);
 		di.uv = { { 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}, {1.0f, 0.0f} };
 		olc::vf2d center;
@@ -3310,6 +3402,8 @@ namespace olc
 
 		void PrepareDrawing() override
 		{
+			
+			//ClearBuffer(olc::GREEN, true);
 			glEnable(GL_BLEND);
 			nDecalMode = DecalMode::NORMAL;
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -3364,6 +3458,10 @@ namespace olc
 		{
 			SetDecalMode(decal.mode);
 
+			//glDepthFunc(GL_LESS);
+			////glDepthFunc(GL_GREATER);
+			//glEnable(GL_DEPTH_TEST);
+
 			if (decal.decal == nullptr)
 				glBindTexture(GL_TEXTURE_2D, 0);
 			else
@@ -3381,6 +3479,8 @@ namespace olc
 				glVertex2f(decal.pos[n].x, decal.pos[n].y);
 			}
 			glEnd();
+
+			//glDisable(GL_DEPTH_TEST);
 		}
 
 		uint32_t CreateTexture(const uint32_t width, const uint32_t height, const bool filtered, const bool clamp) override
@@ -4410,8 +4510,8 @@ namespace olc
 			mapKeys[VK_F9] = Key::F9; mapKeys[VK_F10] = Key::F10; mapKeys[VK_F11] = Key::F11; mapKeys[VK_F12] = Key::F12;
 
 			mapKeys[VK_DOWN] = Key::DOWN; mapKeys[VK_LEFT] = Key::LEFT; mapKeys[VK_RIGHT] = Key::RIGHT; mapKeys[VK_UP] = Key::UP;
-			mapKeys[VK_RETURN] = Key::ENTER; //mapKeys[VK_RETURN] = Key::RETURN;
-
+			//mapKeys[VK_RETURN] = Key::ENTER;// mapKeys[VK_RETURN] = Key::RETURN;
+			
 			mapKeys[VK_BACK] = Key::BACK; mapKeys[VK_ESCAPE] = Key::ESCAPE; mapKeys[VK_RETURN] = Key::ENTER; mapKeys[VK_PAUSE] = Key::PAUSE;
 			mapKeys[VK_SCROLL] = Key::SCROLL; mapKeys[VK_TAB] = Key::TAB; mapKeys[VK_DELETE] = Key::DEL; mapKeys[VK_HOME] = Key::HOME;
 			mapKeys[VK_END] = Key::END; mapKeys[VK_PRIOR] = Key::PGUP; mapKeys[VK_NEXT] = Key::PGDN; mapKeys[VK_INSERT] = Key::INS;

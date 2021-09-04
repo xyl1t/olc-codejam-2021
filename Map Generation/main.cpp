@@ -35,7 +35,7 @@ public:
         for(int j = 0; j < doorWalls.size();j++)
             for(int i = 0; i < doorWalls[j].size();i++){
                 auto pos = doorWalls[j][rand() % (doorWalls[j].size())];
-                map[pos.first][pos.second] = 'D'; //%
+                map[pos.first][pos.second] = ' '; //%
             }
     }
     
@@ -74,7 +74,7 @@ public:
         for(int j = x; j < height+x; j++)
             for(int i = y; i < width+y; i++){
                 if(j == x || i == y || i == width+y-1 || j == height+x-1) {
-                    room.push_back('W'); //#
+                    room.push_back('#'); //#
                     if((j == x && i == y) || (j == x+height-1 && i == y+width-1)
                        || (j == x && i == y+width-1) || (j == x+height-1 && i == y)){
                         continue;
@@ -99,7 +99,7 @@ public:
                     continue;
                 }
                 if(!playerSpawned) { playerSpawned = true; room.push_back('P');}
-                else room.push_back('G');  //-
+                else room.push_back(' ');  //-
             }
        
         int r = 0;
