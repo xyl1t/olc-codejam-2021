@@ -1,3 +1,5 @@
+//WARNING: THIS IS THE WORST CODE YOU HAVE EVER SEEN ON THE INTERNET, PLEASE LOOK AWAY!!
+
 #include <iostream>
 #include <array>
 #include <vector>
@@ -10,9 +12,7 @@ public:
     std::array<std::array<char,WIDTH>,HEIGHT> map;
     std::vector<std::vector<POS>> rooms;
     std::vector<POS> p_ConnectPoints; //possible connect points
-    std::vector<std::vector<POS>> doorWalls;
     std::vector<std::vector<POS>> allWalls;
-   // std::vector<std::vector<POS>> allRooms;
     std::time_t start;
     void ProduceMap(){
         bool success = false;
@@ -21,7 +21,6 @@ public:
             std::vector<char> room;
             rooms.clear();
             allWalls.clear();
-            doorWalls.clear();
             p_ConnectPoints.clear();
             start = std::time(NULL);
             for(int j = 0; j < HEIGHT; j++)
@@ -31,10 +30,36 @@ public:
             for(int i = 0; i < 10; i++)
                 if(GetRoom(room, 8, 10) == -1) success = false;
             
-            if(GetRoom(room, 10, 10) == -1) success = false; //boss room
+            if(GetRoom(room, 10, 10) == -1) success = false;
             
         }
+        auto VerticalCheck = [&](int k, int i){
+            for(int s = k; s < HEIGHT; s++){
+                if(map[s][i] == '#'){
+                    for(int d = k; d > -1; d--){
+                        if(map[d][i] == '#')
+                            return true;
+                    }
+                    return false;
+                }
+            }
+            return false;
+        };
       
+        for(int k = 0; k < HEIGHT; k++)
+            for(int j = 0; j < WIDTH; j++){
+                if(map[k][j] == '#') //startpoint
+                    for(int i = j+1; i < WIDTH; i++){
+                        
+                        if(map[k][i] == '#' ){ //endpoint
+                            if(i == j+1 || !VerticalCheck(k,i-1))
+                                break;
+                            for(int s = j+1; s < i; s++)
+                                map[k][s] = '-';
+                            break;
+                        }
+                    }
+            }
         
         SpawnDoors();
         std::pair<int,int> pos;
@@ -42,51 +67,35 @@ public:
             int x = rand() % (rooms.size()-1);
             int y = rand() % rooms[x].size();
             pos = rooms[x][y];
-        }while(map[pos.first][pos.second] == '#');
+        }while(map[pos.first][pos.second] == '#' || map[pos.first][pos.second] == '%');
         map[pos.first][pos.second]  = 'P';
     }
     
-    
     void SpawnDoors(){
         std::vector<std::vector<POS>> walls;
-        
-       /* for(int j = 0; j < allWalls.size(); j++){
-            int i = 0;
-            while(1){
-                if(allWalls[j].size()-1 == i) break;
-                auto pos = allWalls[j][i];
-                if(map[pos.first][pos.second] == '-'){
-                   // if(allWalls.size()-1 == i)
-                     //   allWalls[j].pop_back();
-                    allWalls[j].erase(allWalls[j].begin() + i);
-                   
-                    continue;
+     
+        for(int j = 0; j < allWalls.size()-1; j++){
+            for(int s = 0; s < 2; s++){
+                int i = rand() % allWalls[j].size();
+            
+                int k = 0;
+                while(1){
+                    auto pos = allWalls[j][i+k];
+                    
+                    if(pos.second <= 0 || pos.second > WIDTH || map[pos.first][pos.second + 1] != '-' ||
+                       map[pos.first][pos.second - 1] != '-')
+                        break;
+                    else {
+                        allWalls[j].erase(allWalls[j].begin() + i+k);
+                        map[pos.first][pos.second] = '-';
+                    }
+                    
+                    if(k+i >= allWalls[j].size()-1)
+                        break;
+                    k++;
                 }
-                i++;
-               
-            }
-        }*/
-        
-        for(int j = 0; j < allWalls.size(); j++){
-            int i = 0;//rand() % allWalls[j].size();
-            while(1){
-                if(allWalls[j].size()-1 == i) break;
-                auto pos = allWalls[j][i];
-                if(map[pos.first][pos.second] == '-'){
-                   // if(allWalls.size()-1 == i)
-                     //   allWalls[j].pop_back();
-                    allWalls[j].erase(allWalls[j].begin() + i);
-                   
-                    continue;
-                }
-                i++;
-               
             }
         }
-        
-       // if(pos.second >= 0 && pos.second < WIDTH && map[pos.first][pos.second + 1] == '-' &&
-         //      map[pos.first][pos.second - 1] == '-')
-        
         
         auto WallExist = [&](POS pos){
             for(int k = 0; k < walls.size(); k++)
@@ -95,7 +104,7 @@ public:
                 }
             return false;
         };
-       // bool goFurther = false;
+
         walls.push_back(std::vector<POS>());
         for(int j = 0; j < allWalls.size(); j++){
             for(int i = 0; i < allWalls[j].size();i++){
@@ -119,6 +128,15 @@ public:
             }
         }
         
+        auto countEmpty = [&](int x, int y) {
+            int ret = 0;
+            if(y+1 < WIDTH && map[x][y+1] == '-') ret++;
+            if(y-1 >= 0 && map[x][y-1] == '-') ret++;
+            if(x-1 >= 0 && map[x-1][y] == '-') ret++;
+            if(x+1 < HEIGHT && map[x+1][y] == '-') ret++;
+            return ret;
+        };
+        
         for(int j = 0; j < walls.size();){
               if(walls[j].size() != 0) {
                   int i = rand() % (walls[j].size());
@@ -127,88 +145,21 @@ public:
                       walls[j].erase(walls[j].begin() + i);
                       continue;
                   }
-                  if( (pos.second < WIDTH && map[pos.first][pos.second + 1] == '%') || (pos.second >= 0 &&                                  map[pos.first][pos.second - 1] == '%')){
+                  if((pos.second < WIDTH && map[pos.first][pos.second + 1] == '%') || (pos.second >= 0 && map[pos.first][pos.second - 1] == '%') 
+                    || countEmpty(pos.first, pos.second) > 2){
                       j++;
                       continue;
                   }
                       
-                  else if((pos.first < HEIGHT && map[pos.first + 1][pos.second] == '%') || (pos.first >= 0 &&
-                         map[pos.first - 1][pos.second] == '%')){
+                  else if((pos.first < HEIGHT && map[pos.first + 1][pos.second] == '%') 
+                        || (pos.first >= 0 && map[pos.first - 1][pos.second] == '%'  )){
                       j++;
                       continue;
                   }
-                 /* if(j != walls.size()-1 && rand() % 3 == 0)
-                      map[pos.first][pos.second] = '-';
-                  else*/
-                      map[pos.first][pos.second] = '%';
+                    map[pos.first][pos.second] = '%';
               }
             j++;
           }
-        
-        
-        /*int j;
-        while(1){
-            if(walls[j].size() != 0) {
-                auto pos = walls[j] [rand() % (walls[j].size())];
-                if(map[pos.first][pos.second] == '-')
-                    continue;
-                j++;
-                map[pos.first][pos.second] = '%';
-            }
-          
-            if(j == walls[j].size())
-            j++;
-            
-        }*/
-        
-       /* for(int j = 0; j < allWalls.size()-1; j++){
-            doorWalls.push_back(std::vector<std::pair<int,int>>());
-            for(int i = 0; i < allWalls[j].size();){
-                
-                auto pos = allWalls[j][i];
-                if(map[pos.first][pos.second] == '-') {i++; continue;}
-                if(pos.first > 0 && pos.first < HEIGHT && map[pos.first + 1][pos.second] == '-' &&
-                   map[pos.first - 1][pos.second] == '-')
-                    doorWalls[j].push_back(pos);
-                else if(pos.second > 0 && pos.second < WIDTH && map[pos.first][pos.second + 1] == '-' &&
-                    map[pos.first][pos.second - 1] == '-')
-                    doorWalls[j].push_back(pos);
-                i++;
-            }
-        }*/
-        
-      /*  for(int j = 0; j < doorWalls.size();){ // the thing is that there are not walls really stored...
-            if(doorWalls[j].size() == 0) {
-                j++;
-                continue;
-            }
-            auto pos = doorWalls[j] [rand() % (doorWalls[j].size())];
-            map[pos.first][pos.second] = '%';
-            j++;
-        }*/
-       /* bool islocatedBoss = false;
-        for(int j = 0; j < doorWalls.size();j++){
-            //for(int i = 0; i < doorWalls[j].size();i++){
-          //  if(doorWalls[j].size() == 0) continue;
-            if(doorWalls[j].size() == 0) {continue;}
-            int i = rand() % (doorWalls[j].size());
-            POS pos;
-           // if(i == doorWalls[j].size()-1){
-                for(; i < rand() % (doorWalls[j].size());i++){
-                    pos = doorWalls[j][i];
-                    if(map[pos.first+1][pos.second] == '%' || map[pos.first-1][pos.second] == '%'
-                       || map[pos.first][pos.second+1] == '%' || map[pos.first][pos.second-1] == '%') continue;
-                    
-                    for(int s = 0; s < rooms.back().size();s++) //checking if the pos is on the boss room
-                        if(pos == doorWalls.back()[s]) { islocatedBoss = true; break;}
-                    
-                    
-                    if(!islocatedBoss)
-                        map[pos.first][pos.second] = '-';
-                    islocatedBoss = false;
-                }
-            
-        }*/
     }
     
     int GetRoom(std::vector<char>& room,const int& minS, const int& maxS){
@@ -225,7 +176,7 @@ public:
         if(!p_ConnectPoints.empty()){
            
             do{
-                if(time(NULL) - start >= 1) return -1;
+                if(time(NULL) - start >= 0.1) return -1;
                 if(minS - maxS != 0){
                     width = minS + (rand() % (maxS - minS));
                     height = minS + (rand() % (maxS - minS));
@@ -252,14 +203,10 @@ public:
         allWalls.push_back(std::vector<std::pair<int,int>>());
         room.reserve(width * height);
         rooms.push_back(std::vector<std::pair<int,int>>());
-       // doorWalls.push_back(std::vector<POS>());
-       // allRooms.push_back(std::vector<POS>());
         for(int j = x; j < height+x; j++)
             for(int i = y; i < width+y; i++){
                 if(j == x || i == y || i == width+y-1 || j == height+x-1) {
                     room.push_back('#'); //W
-                    //if(FoundDoorWall(std::make_pair(j,i)))
-                      //  doorWalls.back().push_back(std::make_pair(j,i));
                     if((j == x && i == y) || (j == x+height-1 && i == y+width-1)
                        || (j == x && i == y+width-1) || (j == x+height-1 && i == y)){       //edges
                         continue;
@@ -271,25 +218,13 @@ public:
                        || (j == x+1 && i == y) || (j == x+height-2 && i == y+width-1)
                           || (j == x && i == y+width-2) || (j == x+height-1 && i == y+1)){
                            allWalls.back().push_back(std::make_pair(j,i));
-                          // allRooms.back().push_back(std::make_pair(j,i));
                            continue;
                        }
-                   
-                    
-                  /*  if((j == x && i == y+1) || (j == x+height-1 && i == y+width-2)       //the doors can't spawn on this places...
-                    || (j == x+1 && i == y+width-1) || (j == x+height-2 && i == y)
-                    
-                    || (j == x+1 && i == y) || (j == x+height-2 && i == y+width-1)
-                       || (j == x && i == y+width-2) || (j == x+height-1 && i == y+1)){
-                        p_ConnectPoints.push_back(std::make_pair(j,i));
-                    }*/
                     p_ConnectPoints.push_back(std::make_pair(j,i));
                     allWalls.back().push_back(std::make_pair(j,i));
-                  //  allRooms.back().push_back(std::make_pair(j,i));
                 }
                 else {
                     room.push_back('-');
-                //    allRooms.back().push_back(std::make_pair(j,i));
                     if(j+3 >= x+height || j-3 <= x || i + 3 >= y+width || i-3 <= y)
                         continue;
                     rooms.back().push_back(std::make_pair(j,i));
@@ -301,21 +236,17 @@ public:
             for(int i = y; i < width+y; i++,r++)
                 map[j][i] = room[r];
         
-        for(int j = 0; j < HEIGHT; j++){
+        /*for(int j = 0; j < HEIGHT; j++){
             for(int i = 0; i < WIDTH; i++)
                 std::cout << map[j][i];
             std::cout << std::endl;
-        }
+        }*/
         return 0;
     }
     
     bool CanPlaceRoom(int x, int y, int width, int height){
        if(isOverlapsed(x,y,width,height))
             return false;
-       /* for(int j = x; j < height+x; j++)
-            for(int i = y; i < width+y; i++)
-                if(map[j][i] == '-') return false; //-
-                */
         return x > 0 && y > 0 && x+height < HEIGHT && y+width < WIDTH;
     }
     
@@ -341,30 +272,14 @@ public:
            return true;
        };
 
-        for(int j = 0; j < rooms.size(); j++){
+        for (int j = 0; j < rooms.size(); j++){
             changeRoom = rooms[j];
-           if(WholeRoomLapsed(rooms[j])) return true;
-           else{
-               rooms[j] = changeRoom;
-           }
+           if (WholeRoomLapsed(rooms[j])) return true;
+           else
+                rooms[j] = changeRoom;
         }
        return false;
     }
-
-    
-    
-    
-  /*  bool FoundDoorWall(std::pair<int,int> p_door){
-        for(int j = 0; j < allRooms.size(); j++)
-            for(int i = 0; i < allRooms[j].size(); i++)
-                if(allRooms[j][i] == p_door)
-                    return true;
-        for(int j = 0; j < map.size(); j++)
-              for(int i = 0; i < map[j].size(); i++)
-                  if((map[j][i] == '#' && p_door.first == j && p_door.second == i) || (map[j][i] == '-' && p_door.first == j && p_door.second == i))
-                      return true;
-        return false;
-    }*/
 };
 
 int main(int argc, const char * argv[]) {
@@ -372,7 +287,8 @@ int main(int argc, const char * argv[]) {
     Generation gen;
     gen.ProduceMap();
     
-    for(int j = 0; j < gen.HEIGHT; j++){
+    //comment this out, if you don't need to see the map
+    for(int j = 0; j < gen.HEIGHT; j++){ 
         for(int i = 0; i < gen.WIDTH; i++)
             std::cout << gen.map[j][i];
         std::cout << std::endl;
