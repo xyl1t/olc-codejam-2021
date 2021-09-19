@@ -18,6 +18,7 @@
 #include "assets.hpp"
 #include "player.hpp"
 #include "common.hpp"
+#include "../mapGeneration/generation.cpp"
 
 /* TODO:
  * Collision callbacks (for shooting) http://www.iforce2d.net/b2dtut/collision-callbacks
@@ -48,12 +49,12 @@ public:
 		{"--------#........##.##.........##.####--------"},
 		{"--------#.........###..........#.....#--------"},
 		{"--------#......................#.....#--------"},
-		{"--------#......................#.....#--------"},
-		{"--------#......................#.....#--------"},
-		{"--------#......................#.....#--------"},
-		{"--------#......................#.....#--------"},
-		{"--------#......................#.....#--------"},
-		{"--------#..........#############.....#--------"},
+		{"--------#....E...E.............#.....#--------"},
+		{"--------#....EE.E..............#.....#--------"},
+		{"--------#...EEEEE..............#.....#--------"},
+		{"--------#....E.E.E.............#.....#--------"},
+		{"--------#...EE.EEE.............#.....#--------"},
+		{"--------#.......E..#############.....#--------"},
 		{"--------#####.######.................#--------"},
 		{"--------#..........#.................#--------"},
 		{"--------#....................#########--------"},
@@ -76,7 +77,22 @@ public:
 	
 public:
 	bool OnUserCreate() override {
-		map.Load(mapData);
+		
+		Generation gen;
+		gen.ProduceMap();
+		for(int j = 0; j < gen.HEIGHT; j++){ 
+			for(int i = 0; i < gen.WIDTH; i++) {
+				if (gen.map[j][i] == '.' && rand() % 60 == 0) {
+					gen.map[j][i] = 'E';
+				}
+				std::cout << gen.map[j][i];
+			}
+			std::cout << std::endl;
+		}
+
+		map.Load(gen.map);
+		
+		// map.Load(mapData);
 		assets.Load("../assets/gfx/tileset.png", 16, 16);
 		player.body = map.playerBody;
 		
@@ -129,18 +145,27 @@ public:
 		map.camera.y = lerp(map.camera.y, player.body->GetPosition().y, 5.f * fElapsedTime);
 		
 		/* GAME LOGIC *******************/
-		player.Update(fElapsedTime);
-				
-		/* RENDER ***********************/
 		float visibleTilesX = std::min(ScreenWidth()  / SCALE / assets.spriteWidth,  (float)map.width);
 		float visibleTilesY = std::min(ScreenHeight() / SCALE / assets.spriteHeight, (float)map.height);
 		float offsetX = map.camera.x - visibleTilesX/2.f + 0.5f;
 		float offsetY = map.camera.y - visibleTilesY/2.f + 0.5f;
 		offsetX = std::max(std::min(offsetX, map.width - visibleTilesX), 0.f);
 		offsetY = std::max(std::min(offsetY, map.height - visibleTilesY), 0.f);
-		
 		float tileOffsetX = (offsetX - (int)offsetX) * assets.spriteWidth;
 		float tileOffsetY = (offsetY - (int)offsetY) * assets.spriteHeight;
+		
+		olc::vf2d playerSpritePos = {
+			(float(player.body->GetPosition().x) * assets.spriteWidth  - offsetX * assets.spriteWidth) * SCALE,
+			(float(player.body->GetPosition().y) * assets.spriteHeight - offsetY * assets.spriteWidth) * SCALE
+		};
+		player.directionAngle = std::atan2f(GetMouseY() - playerSpritePos.y, GetMouseX() - playerSpritePos.x);
+		player.Update(fElapsedTime);
+		for (auto& enemy : map.enemies) {
+			enemy.directionAngle = enemy.body->GetAngle();
+			enemy.Update(fElapsedTime);
+		}
+		
+		/* RENDER ***********************/
 		
 		for (int i = -1; i < visibleTilesX + 2; i++) {
 			for (int j = -1; j < visibleTilesY + 2; j++) {
@@ -164,62 +189,10 @@ public:
 		}
 		
 		
-		olc::vf2d playerSpritePos = {
-			(float(player.body->GetPosition().x) * assets.spriteWidth  - offsetX * assets.spriteWidth) * SCALE,
-			(float(player.body->GetPosition().y) * assets.spriteHeight - offsetY * assets.spriteWidth) * SCALE
-		};
-		float mouseAngle = std::atan2f(GetMouseY() - playerSpritePos.y, GetMouseX() - playerSpritePos.x);
-		player.directionAngle = mouseAngle;
-		// float playerAngle = mouseAngle + M_PI*2/8 - (M_PI*2/8)/2;
-		// if (playerAngle < 0) playerAngle = playerAngle + M_PI*2;
-		// if (playerAngle > M_PI*2) playerAngle -= M_PI * 2; 
-		// float val = playerAngle / (M_PI*2);
-		// int playerSpriteIdx = val * 8;
-		// auto [playerSpriteX, playerSpriteY] = assets.GetSpriteXYFromIndex(playerSpriteIdx);
-		DrawPartialDecal(
-			playerSpritePos,
-			{assets.spriteWidth*SCALE, assets.spriteHeight*SCALE},
-			assets.spriteAtlas.Decal(),
-			assets.GetSprite(player.spriteID),
-			{(float)assets.spriteWidth, (float)assets.spriteHeight}
-		);
-		DrawPartialDecal(
-			playerSpritePos,
-			{assets.spriteWidth*SCALE, assets.spriteHeight*SCALE},
-			assets.spriteAtlas.Decal(),
-			assets.GetSprite(player.topSpriteID),
-			{(float)assets.spriteWidth, (float)assets.spriteHeight}
-		);
-		
-		// float desired = mouseAngle;
-		// float smooth = lerp(player.body->GetAngle(), desired, 0.05);
-		// DrawString({0,0}, std::to_string(player.body->GetAngle()));
-		// player.body->ApplyTorque((mouseAngle - player.body->GetAngle()) * 10, true);
-		// player.body->ApplyAngularImpulse((mouseAngle - player.body->GetAngle()), true);
-		// player.body->SetTransform(player.body->GetPosition(), smooth);
-		// DrawPartialRotatedDecal(
-		// 	playerSpritePos,
-		// 	assets.spriteAtlas.Decal(),
-		// 	player.body->GetAngle(),
-		// 	{assets.spriteWidth/2.f, assets.spriteHeight/2.f},
-		// 	{0,0},
-		// 	{(float)assets.spriteWidth, (float)assets.spriteHeight},
-		// 	{SCALE, SCALE}
-		// );
-		
-		playerSpritePos.x += assets.spriteWidth /2.f;
-		playerSpritePos.y += assets.spriteHeight/2.f;
-		float testX = std::cos(player.body->GetAngle())*16*SCALE;
-		float testY = std::sin(player.body->GetAngle())*16*SCALE;
-		// DrawLineDecal(playerSpritePos, {playerSpritePos.x + testX, playerSpritePos.y + testY});
-		
-		// DrawCircle(
-		// 	{
-		// 		(int)(player.body->GetPosition().x * assets.spriteWidth  +assets.spriteWidth /2 - offsetX * assets.spriteWidth * SCALE),
-		// 		(int)(player.body->GetPosition().y * assets.spriteHeight +assets.spriteHeight/2 - offsetY * assets.spriteWidth * SCALE)
-		// 	},
-		// 	player.body->GetFixtureList()[0].GetShape()->m_radius * assets.spriteWidth
-		// );
+		for (const auto& enemy : map.enemies) {
+			DrawAgent(enemy, offsetX, offsetY);
+		}
+		DrawAgent(player, offsetX, offsetY);
 		
 		for (int i = -1; i < visibleTilesX + 2; i++) {
 			for (int j = -1; j < visibleTilesY + 2; j++) {
@@ -241,9 +214,39 @@ public:
 			}
 		}
 		
+		
+		playerSpritePos.x += assets.spriteWidth /2.f;
+		playerSpritePos.y += assets.spriteHeight/2.f;
+		float testX = std::cos(player.body->GetAngle())*16*SCALE;
+		float testY = std::sin(player.body->GetAngle())*16*SCALE;
+		DrawLineDecal(playerSpritePos, {playerSpritePos.x + testX, playerSpritePos.y + testY});
+		
+		
 		map.world.Step(fElapsedTime, 16, 4);
 	
 		return true;
+	}
+	
+	void DrawAgent(const Agent& agent, float offsetX, float offsetY) {
+		olc::vf2d agentSpritePos = {
+			(float(agent.body->GetPosition().x) * assets.spriteWidth  - offsetX * assets.spriteWidth) * SCALE,
+			(float(agent.body->GetPosition().y) * assets.spriteHeight - offsetY * assets.spriteWidth) * SCALE
+		};
+		DrawPartialDecal(
+			agentSpritePos,
+			{assets.spriteWidth*SCALE, assets.spriteHeight*SCALE},
+			assets.spriteAtlas.Decal(),
+			assets.GetSprite(agent.spriteID),
+			{(float)assets.spriteWidth, (float)assets.spriteHeight}
+		);
+		DrawPartialDecal(
+			agentSpritePos,
+			{assets.spriteWidth*SCALE, assets.spriteHeight*SCALE},
+			assets.spriteAtlas.Decal(),
+			assets.GetSprite(agent.topSpriteID),
+			{(float)assets.spriteWidth, (float)assets.spriteHeight}
+		);
+		
 	}
 };
 

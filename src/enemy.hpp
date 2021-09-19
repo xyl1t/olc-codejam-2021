@@ -8,8 +8,8 @@
 
 class Enemy : public Agent {
 public:
-	Enemy(b2Body* body = nullptr);
-	Enemy(b2Body* body, float posX, float posY);
+	Enemy();
+	Enemy(b2World& world, float posX = 0.f, float posY = 0.f, b2Shape* shape = nullptr);
 	
 	void Update(float fElapsedTime) override;
 	// void Render(olc::PixelGameEngine& pge);

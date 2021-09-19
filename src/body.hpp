@@ -14,23 +14,23 @@ enum class SpriteID {
 	PLAYER_UP_LEFT 		= 5,
 	PLAYER_UP 			= 6,
 	PLAYER_UP_RIGHT 	= 7,
-	PLAYER_TOP_RIGHT 		= 128+0,
-	PLAYER_TOP_DOWN_RIGHT 	= 128+1,
-	PLAYER_TOP_DOWN 		= 128+2,
-	PLAYER_TOP_DOWN_LEFT 	= 128+3,
-	PLAYER_TOP_LEFT 		= 128+4,
-	PLAYER_TOP_UP_LEFT 		= 128+5,
-	PLAYER_TOP_UP 			= 128+6,
-	PLAYER_TOP_UP_RIGHT 	= 128+7,
+	PLAYER_TOP_RIGHT 		=  8,
+	PLAYER_TOP_DOWN_RIGHT 	=  9,
+	PLAYER_TOP_DOWN 		= 10,
+	PLAYER_TOP_DOWN_LEFT 	= 11,
+	PLAYER_TOP_LEFT 		= 12,
+	PLAYER_TOP_UP_LEFT 		= 13,
+	PLAYER_TOP_UP 			= 14,
+	PLAYER_TOP_UP_RIGHT 	= 15,
 	
-	ENEMY_RIGHT 	=  8,
-	ENEMY_DOWN_RIGHT=  9,
-	ENEMY_DOWN 		= 10,
-	ENEMY_DOWN_LEFT = 11,
-	ENEMY_LEFT 		= 12,
-	ENEMY_UP_LEFT 	= 13,
-	ENEMY_UP 		= 14,
-	ENEMY_UP_RIGHT 	= 15,
+	ENEMY_RIGHT 	= 128+0,
+	ENEMY_DOWN_RIGHT= 128+1,
+	ENEMY_DOWN 		= 128+2,
+	ENEMY_DOWN_LEFT = 128+3,
+	ENEMY_LEFT 		= 128+4,
+	ENEMY_UP_LEFT 	= 128+5,
+	ENEMY_UP 		= 128+6,
+	ENEMY_UP_RIGHT 	= 128+7,
 	ENEMY_TOP_RIGHT 	 = 128+ 8,
 	ENEMY_TOP_DOWN_RIGHT = 128+ 9,
 	ENEMY_TOP_DOWN 		 = 128+10,
@@ -39,6 +39,15 @@ enum class SpriteID {
 	ENEMY_TOP_UP_LEFT 	 = 128+13,
 	ENEMY_TOP_UP 		 = 128+14,
 	ENEMY_TOP_UP_RIGHT 	 = 128+15,
+
+	PROJECTILE_RIGHT 		= 256+0,
+	PROJECTILE_DOWN_RIGHT	= 256+1,
+	PROJECTILE_DOWN 		= 256+2,
+	PROJECTILE_DOWN_LEFT 	= 256+3,
+	PROJECTILE_LEFT 		= 256+4,
+	PROJECTILE_UP_LEFT 		= 256+5,
+	PROJECTILE_UP 			= 256+6,
+	PROJECTILE_UP_RIGHT 	= 256+7,	
 
 	FLOOR = 736,
 	WALL_BASIC     = 704,
@@ -111,33 +120,83 @@ const inline std::unordered_map<int, int> ceilTile { {2, 1}, {8, 2}, {10, 3}, {1
 enum class BodyType {
 	PLAYER = (int)SpriteID::PLAYER_RIGHT,
 	ENEMY = (int)SpriteID::ENEMY_RIGHT,
+	PROJECTILE = (int)SpriteID::PROJECTILE_RIGHT,
 	BOSS,
 	FLOOR = (int)SpriteID::FLOOR,
 	WALL = (int)SpriteID::WALL_BASIC,
+	WALL_DECO = (int)SpriteID::WALL_BASIC,
 	CEIL = (int)SpriteID::CEIL_0,
 	DOOR_LOCKED = (int)SpriteID::DOOR_LOCKED,
 	DOOR_UNLOCKED = (int)SpriteID::DOOR_UNLOCKED,
 	DOOR_OPEN,
 	AIR = (int)SpriteID::AIR,
 	SPACE = (int)SpriteID::SPACE_1,
+	NA = (int)SpriteID::NA,
+};
+const inline std::unordered_map<char, const BodyType> charToBodyType { 
+	{'%', BodyType::DOOR_OPEN}, 
+	{'.', BodyType::FLOOR}, 
+	{'#', BodyType::WALL},
+	{'P', BodyType::PLAYER},
+	{'E', BodyType::ENEMY},
+	{'\0',BodyType::SPACE},
+	{'-', BodyType::SPACE},
+	{' ', BodyType::AIR},
 };
 
+
+class Map;
 struct Body {
 	b2Body* body{};
-	b2World& world;
 	bool isSolid;
 	bool isDynamic;
 	BodyType type;
 	SpriteID spriteID;
+	// const Map& map;
 	
-	Body(b2World& world, bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, int posX = 0, int posY = 0);
-	Body(b2World& world, bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, const b2Shape& shape, int posX = 0, int posY = 0);
-	
+	Body();
+	Body(b2World& world, bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, int posX = 0, int posY = 0, b2Shape* shape = nullptr);
+	virtual ~Body();
 	Body(const Body& other);
 	Body& operator=(const Body& other);
 	Body(const Body&& other);
 	Body& operator=(const Body&& other);
-	
+
+	virtual void Update(float fElpasedTime);
 };
+
+// class MyContactListener : public b2ContactListener
+// {
+// 	void BeginContact(b2Contact* contact) {
+// 		//check if fixture A was a Agent
+// 		uintptr_t bodyUserData = contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+// 		if (bodyUserData) {
+// 			Body* body = reinterpret_cast<Body*>(bodyUserData);
+// 			if (body->type == BodyType::PROJECTILE) {
+				
+// 			}
+// 		}
+
+// 		//check if fixture B was a Agent
+// 		bodyUserData = contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+// 		if (bodyUserData)
+// 			reinterpret_cast<Agent*>(bodyUserData)->startContact();
+
+// 	}
+
+// 	void EndContact(b2Contact* contact) {
+
+// 		//check if fixture A was a Agent
+// 		uintptr_t bodyUserData = contact->GetFixtureA()->GetBody()->GetUserData().pointer;
+// 		if (bodyUserData)
+// 		reinterpret_cast<Agent*>(bodyUserData)->endContact();
+
+// 		//check if fixture B was a Agent
+// 		bodyUserData = contact->GetFixtureB()->GetBody()->GetUserData().pointer;
+// 		if (bodyUserData)
+// 		reinterpret_cast<Agent*>(bodyUserData)->endContact();
+
+// 	}
+// };
 
 #endif

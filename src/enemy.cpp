@@ -1,12 +1,7 @@
 #include "enemy.hpp"
 
-Enemy::Enemy(b2Body* body) : Agent(body, BodyType::ENEMY, SpriteID::ENEMY_RIGHT) {
-}
-
-Enemy::Enemy(b2Body* body, float posX, float posY) : Agent(body, BodyType::ENEMY, SpriteID::ENEMY_RIGHT, posX, posY) {
-	if (body) {
-		body->SetTransform({posX, posY}, body->GetAngle());
-	}
+Enemy::Enemy() : Agent() { }
+Enemy::Enemy(b2World& world, float posX, float posY, b2Shape* shape) : Agent(world, BodyType::ENEMY, SpriteID::ENEMY_RIGHT, posX, posY, shape) {
 }
 
 void Enemy::Update(float fElapsedTime) {

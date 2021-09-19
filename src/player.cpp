@@ -1,14 +1,10 @@
 #include "player.hpp"
-#include "common.hpp"
-#include <cmath>
 
-Player::Player(b2Body* body) : Agent(body, BodyType::PLAYER, SpriteID::PLAYER_RIGHT) {
+Player::Player() : Agent() {
+	type = BodyType::PLAYER;
+	spriteID = SpriteID::PLAYER_RIGHT;
 }
-
-Player::Player(b2Body* body, float posX, float posY) : Agent(body, BodyType::PLAYER, SpriteID::PLAYER_RIGHT, posX, posY) {
-	if (body) {
-		body->SetTransform({posX, posY}, body->GetAngle());
-	}
+Player::Player(b2World& world, float posX, float posY, b2Shape* shape) : Agent(world, BodyType::PLAYER, SpriteID::PLAYER_RIGHT, posX, posY, shape) {
 }
 
 void Player::Update(float fElapsedTime) {

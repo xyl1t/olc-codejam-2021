@@ -1,56 +1,47 @@
 #include "agent.hpp"
 #include "common.hpp"
 
-Agent::Agent(b2Body* body, BodyType type, SpriteID spriteID) : body(body), type(type), spriteID(spriteID) {
-}
+Agent::Agent() : Body() { }
+Agent::Agent(b2World& world, BodyType type, SpriteID spriteID, float posX, float posY, b2Shape* shape) : Body(world, true, true, type, spriteID, posX, posY, shape) { 
+	this->body->GetFixtureList()[0].SetDensity(1.0f);
+	this->body->GetFixtureList()[0].SetRestitution(0.125f);
+	this->body->SetLinearDamping(10);
+	this->body->SetAngularDamping(7);
 
-Agent::Agent(b2Body* body, BodyType type, SpriteID spriteID, float posX, float posY) : body(body), type(type), spriteID(spriteID) {
-	if (body) {
-		body->SetTransform({posX, posY}, body->GetAngle());
-	}
 }
-Agent::~Agent() {
-	
-}
+Agent::~Agent() { }
 
 void Agent::Update(float fElapsedTime) {
-	// NOTE: selects roation sprite 	
-	float angle = normalizeAngle(body->GetAngle());
-	float bodyAngle = normalizeAngle(angle + M_PI*2/8 - (M_PI*2/8)/2);
-	float val = bodyAngle / (M_PI*2);
-	int rot = val * 8;
-	spriteID = SpriteID(int(this->type)+rot); // TODO: the sprite id should also be affected by damage!
+	Body::Update(fElapsedTime);
 	
+	// NOTE: set top sprite based on direction
 	directionAngle = normalizeAngle(directionAngle);
 	float topAngle = normalizeAngle(directionAngle + M_PI*2/8 - (M_PI*2/8)/2);
-	val = topAngle / (M_PI*2);
-	rot = val * 8;
+	float val = topAngle / (M_PI*2);
+	int rot = val * 8;
 	topSpriteID = SpriteID(int(this->type) + 8 + rot); // TODO: the sprite id should also be affected by damage!
+}
 
+void Agent::Attack() {
 	
-	// NOTE: turn player in the direction of his velocity
-	b2Vec2 vel = body->GetLinearVelocity();
-	if (vel.Length() > 1) {
-		float desired = normalizeAngle(std::atan2f(vel.y, vel.x));
-		float smooth{};
-		
-		if (desired > M_PI + M_PI_2 && angle < M_PI_2) {
-			float offset = M_PI*2 - desired;
-			angle += offset;
-			desired = 0;
-			smooth = lerp(angle, desired, 0.15f);
-			smooth -= offset;
-		} else if (angle > M_PI + M_PI_2 && desired < M_PI) {
-			float offset = M_PI*2 - angle;
-			angle = 0;
-			desired += offset;
-			smooth = lerp(angle, desired, 0.15f);
-			smooth -= offset;
-		} else {
-			smooth = lerp(angle, desired, 0.15f);
-		}
-		
-		body->SetTransform(body->GetPosition(), smooth);
-	}
+	// Agent projectile;
+	// projectile.isDynamic = true;
+	// projectile.isSolid = false;
+	
+	// b2CircleShape circle;
+	// circle.m_radius = 0.125f;
+	// b2BodyDef bodyDef;
+	// bodyDef.position = body->GetPosition();
+	// bodyDef.angle = body->GetAngle();
+	// bodyDef.type = b2_dynamicBody;
+	// projectile.body = body->GetWorld()->CreateBody(&bodyDef);
+	// b2FixtureDef fixtureDef;
+	// fixtureDef.shape = &circle;
+	// fixtureDef.density = 1;
+	// // fixtureDef.restitution = 0.125f;
+	// // projectile.body->SetLinearDamping(10);
+	// // projectile.body->SetAngularDamping(7);
+	// projectile.body->CreateFixture(&fixtureDef);
+	// projectile.body->GetUserData().pointer = reinterpret_cast<uintptr_t>(projectile);
 	
 }

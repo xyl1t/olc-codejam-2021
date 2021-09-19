@@ -3,6 +3,7 @@
 #include <cmath>
 
 inline const float WorldScale = 16;
+
 inline float lerp(float a, float b, float t) {
 	return a + t * (b - a);
 }

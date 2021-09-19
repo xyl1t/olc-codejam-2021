@@ -22,52 +22,64 @@ void Map::Load(std::vector<std::string> data) {
 		agentBody->SetLinearDamping(10);
 		agentBody->SetAngularDamping(7);
 		agentBody->CreateFixture(&fixtureDef);
+		agentBody->GetUserData().pointer = reinterpret_cast<uintptr_t>(agentBody);
 	};
 	
+	b2PolygonShape rect;
+	rect.SetAsBox(0.5f, 0.5f);
+	
+	b2CircleShape circle;
+	circle.m_radius = 0.49f;
 	
 	for (int y = 0; y < data[0].size(); y++) {
 		std::vector<std::vector<Body>> row;
 		for (int x = 0; x < data.size(); x++) {
 			char d = data[x][y];
-			switch (d) {
-				case '.': // FLOOR
-					row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x}}); 
-				break;
+			
+			const auto& it = charToBodyType.find(d);
+			if (it != charToBodyType.end()) {
 				
-				case '#': // WALL
-					row.push_back({Body{this->world, true, false, BodyType::WALL,  SpriteID::WALL_BASIC, y, x}}); 
-				break;
-				
-				case '&': // DECO WALL (not an obstacle)
-					row.push_back({Body{this->world, false, false, BodyType::WALL,  SpriteID::WALL_BASIC, y, x}}); 
-				break;
-				
-				case 'P': { // PLAYER
-					row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x}}); 
-					createAgent(playerBody, y, x);
-					spawnPoint = { (float)y, (float)x };
-				} break;
-				case 'E': { // ENEMY
-					row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x}}); 
-					Enemy e = Enemy(nullptr);
-					createAgent(e.body, y, x);
-					enemies.push_back(&e);
-				} break;
-				
-				case '-': { // SPACE
-					int localY = x % 2;
-					int localX = y % 2;
-					int id = localX + localY * 2;
-					row.push_back({Body{this->world, false, false, BodyType::SPACE, (SpriteID)((int)SpriteID::SPACE_1 + id), y, x}}); 
-				} break;
-				
-				case ' ': { // EMPTY
-					row.push_back({Body{this->world, false, false, BodyType::AIR, SpriteID::AIR, y, x}}); 
-				} break;
-				
-				default: { // OTHER
-					row.push_back({Body{this->world, false, false, BodyType::AIR, SpriteID::NA, y, x}}); 
+				BodyType bt = charToBodyType.at(d);
+				switch (bt) {
+					
+					case BodyType::DOOR_OPEN: // DOOR
+					// 	row.push_back({Body{this->world, false, false, BodyType::DOOR_OPEN, SpriteID::DOOR_UNLOCKED, y, x, &rect}}); 
+					// break;
+					case BodyType::FLOOR:
+						row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x, &rect}}); 
+					break;
+					
+					case BodyType::WALL: // WALL
+						row.push_back({Body{this->world, true, false, BodyType::WALL,  SpriteID::WALL_BASIC, y, x, &rect}}); 
+					break;
+					
+					case BodyType::PLAYER: { // PLAYER
+						row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x, &rect}}); 
+						createAgent(playerBody, y, x);
+						spawnPoint = { (float)y, (float)x };
+					} break;
+					case BodyType::ENEMY: { // ENEMY
+						row.push_back({Body{this->world, false, false, BodyType::FLOOR, SpriteID::FLOOR, y, x, &rect}}); 
+						Enemy e(this->world, y, x, &circle);
+						enemies.push_back(e);
+					} break;
+					
+					case BodyType::SPACE: {
+						int localY = x % 2;
+						int localX = y % 2;
+						int id = localX + localY * 2;
+						row.push_back({Body{this->world, false, false, BodyType::SPACE, (SpriteID)((int)SpriteID::SPACE_1 + id), y, x, &rect}}); 
+					} break;
+					
+					case BodyType::AIR: { // EMPTY
+						row.push_back({Body{this->world, false, false, BodyType::AIR, SpriteID::AIR, y, x, &rect}}); 
+					} break;
+					
+					default:
+						row.push_back({Body{this->world, false, false, BodyType::AIR, SpriteID::AIR, y, x, &rect}}); 
 				}
+			} else {
+				row.push_back({Body{this->world, false, false, BodyType::AIR, SpriteID::NA, y, x, &rect}}); 
 			}
 		}
 		map.push_back(row);

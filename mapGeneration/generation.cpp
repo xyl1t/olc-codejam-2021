@@ -76,7 +76,7 @@ public:
             int x = rand() % (rooms.size()-1);
             int y = rand() % rooms[x].size();
             pos = rooms[x][y];
-        }while(map[pos.first][pos.second] == Tile_Wall || map[pos.first][pos.second] == Tile_Door);
+        }while(map[pos.first][pos.second] == Tile_Wall || map[pos.first][pos.second] == Tile_Door);
         map[pos.first][pos.second]  = Tile_Player;
     }
     
@@ -155,7 +155,7 @@ public:
                       continue;
                   }
                   if((pos.second < WIDTH && map[pos.first][pos.second + 1] == Tile_Door) || (pos.second >= 0 && map[pos.first][pos.second - 1] == Tile_Door) 
-                    || countEmpty(pos.first, pos.second) > 2){
+                    || countEmpty(pos.first, pos.second) > 2){
                       j++;
                       continue;
                   }
@@ -177,8 +177,8 @@ public:
         int y = 0;
         int x = 0;
         int pos = 0;
-        int dirY = 0;
-        int dirX = 0;
+        [[maybe_unused]]int dirY = 0;
+        [[maybe_unused]]int dirX = 0;
         if(!room.empty())
             room.clear();
         
@@ -216,15 +216,15 @@ public:
             for(int i = y; i < width+y; i++){
                 if(j == x || i == y || i == width+y-1 || j == height+x-1) {
                     room.push_back(Tile_Wall); //W
-                    if((j == x && i == y) || (j == x+height-1 && i == y+width-1)
+                    if((j == x && i == y) || (j == x+height-1 && i == y+width-1)
                        || (j == x && i == y+width-1) || (j == x+height-1 && i == y)){       //edges
                         continue;
                     }
                        
-                       if((j == x && i == y+1) || (j == x+height-1 && i == y+width-2)       //the doors can't spawn on this places...
+                       if((j == x && i == y+1) || (j == x+height-1 && i == y+width-2)       //the doors can't spawn on this places...
                        || (j == x+1 && i == y+width-1) || (j == x+height-2 && i == y)
                        
-                       || (j == x+1 && i == y) || (j == x+height-2 && i == y+width-1)
+                       || (j == x+1 && i == y) || (j == x+height-2 && i == y+width-1)
                           || (j == x && i == y+width-2) || (j == x+height-1 && i == y+1)){
                            allWalls.back().push_back(std::make_pair(j,i));
                            continue;
@@ -234,7 +234,7 @@ public:
                 }
                 else {
                     room.push_back(Tile_Floor);
-                    if(j+3 >= x+height || j-3 <= x || i + 3 >= y+width || i-3 <= y)
+                    if(j+3 >= x+height || j-3 <= x || i + 3 >= y+width || i-3 <= y)
                         continue;
                     rooms.back().push_back(std::make_pair(j,i));
                 }

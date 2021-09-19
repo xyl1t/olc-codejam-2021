@@ -14,7 +14,7 @@ public: // TODO: change this to private later?
 	std::vector<std::string> data; 
 	std::vector<std::vector<std::vector<Body>>> map;
 	
-	std::vector<Enemy*> enemies;
+	std::vector<Enemy> enemies;
 	
 	int width;
 	int height;
@@ -34,6 +34,8 @@ public:
 	}
 	
 	void Load(std::vector<std::string> data);
+
+	// void AddAgent(Agent& agentToAdd);
 	
 };
 

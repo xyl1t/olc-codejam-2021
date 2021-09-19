@@ -5,22 +5,22 @@
 #include <vector>
 // #include "olcPixelGameEngine.h"
 
-class Agent {
+class Agent : public Body {
 public:
-	b2Body* body{};
-	BodyType type;
-	SpriteID spriteID;
+	bool alive{true};
 	SpriteID topSpriteID;
 	float directionAngle{};
 	float health;
 	float battery;
 	void* currentWeapon;
 
-	Agent(b2Body* body, BodyType type, SpriteID spriteID);
-	Agent(b2Body* body, BodyType type, SpriteID spriteID, float posX, float posY);
+	Agent();
+	Agent(b2World& world, BodyType type, SpriteID spriteID, float posX = 0.f, float posY = 0.f, b2Shape* shape = nullptr);
 	virtual ~Agent();
 	
-	virtual void Update(float fElpasedTime);
+	void Update(float fElpasedTime) override;
+	
+	virtual void Attack();
 	// void Render(olc::PixelGameEngine& pge);
 };
 
