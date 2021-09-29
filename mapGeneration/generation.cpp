@@ -170,7 +170,7 @@ public:
                 }
             }while(eamount < enemies);
         }
-         //for(int l = 0; l < HEIGHT; l++)
+         //for(int l = 0; l < HEIGHT; l++) test
           //   std::cout << map[l] << std::endl;
         
         //fill out the empty tiles here...
