@@ -68,7 +68,7 @@ public:
         rooms.reserve(amountOfRooms);
         oarea_rooms.reserve(amountOfRooms);
 
-        //this is probably uneccesery
+        //not sure if thats neccesery
         POS spawnPoint = POS(dungeonHeight / 2, dungeonWidth / 2);
         SpawnHouse(minWidth, maxWidth, minHeight, maxHeight, spawnPoint);
         
@@ -148,7 +148,7 @@ public:
         
         
         //spawning enemies
-       // int enemyTotal;
+        int enemyTotal = 0;
         const int enemyDensity = 10 / 1;
         for(int j = 0; j < rooms.size(); j++){
             int floors = 0;
@@ -159,7 +159,7 @@ public:
             }
             
             int enemies = floors / enemyDensity;
-           // enemyTotal += enemies;
+            enemyTotal += enemies;
             int eamount = 0;
             do{
                 int i = rand() % rooms[j].size();
