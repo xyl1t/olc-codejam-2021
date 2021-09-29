@@ -3,16 +3,13 @@
 #include <iostream>
 #include "generation.cpp"
 
-int main(int argc, const char * argv[]) {
+int main() {
     srand(time(NULL));
-    Generation gen;
-    gen.ProduceMap();
-    
-    //comment this out, if you don't need to see the map
-    for(int j = 0; j < gen.HEIGHT; j++){ 
-        for(int i = 0; i < gen.WIDTH; i++)
-            std::cout << gen.map[j][i];
-        std::cout << std::endl;
-    }
+    Generation gen(48,48,4,4,4,4);
+    if(gen.Start(12,6,10,6,10) == -1)
+        std::cout << "ERROR: The rooms can't fit into the map, decrease the min rooms size or the amount" << std::endl;
+    else
+        for(int j = 0; j < gen.HEIGHT; j++)
+            std::cout << gen.map[j] << std::endl;
     return 0;
 }
