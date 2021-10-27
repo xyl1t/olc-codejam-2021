@@ -4,6 +4,9 @@
 #include "box2d/box2d.h"
 #include <tuple>
 #include <unordered_map>
+#include "olcPixelGameEngine.h"
+class Map;
+class Game;
 
 enum class SpriteID {
 	PLAYER_RIGHT 		= 0,
@@ -146,16 +149,38 @@ const inline std::unordered_map<char, const BodyType> charToBodyType {
 
 
 class Map;
-struct Body {
-	b2Body* body{};
+class Body {
+public:
+	Map* map{};
 	bool isSolid;
 	bool isDynamic;
 	BodyType type;
 	SpriteID spriteID;
-	// const Map& map;
+	b2Body* body;
+	b2BodyDef bodyDef;
+	b2FixtureDef fixtureDef;
+	bool alive{true};
+	bool sleep{false};
 	
-	Body();
-	Body(b2World& world, bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, int posX = 0, int posY = 0, b2Shape* shape = nullptr);
+	inline float GetX() {
+		if (body) return body->GetPosition().x;
+		else 	  return bodyDef.position.x;
+	}
+	inline float GetY() {
+		if (body) return body->GetPosition().y;
+		else 	  return bodyDef.position.y;
+	}
+	inline void SetX(float val) {
+		if (body) body->SetTransform({val, body->GetPosition().y}, body->GetAngle());
+		else 	  bodyDef.position.x = val;
+	}
+	inline void SetY(float val) {
+		if (body) body->SetTransform({body->GetPosition().x, val}, body->GetAngle());
+		else 	  bodyDef.position.y = val;
+	}
+	
+	Body(bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, float posX, float posY);
+	Body(bool isSolid, bool isDynamic, BodyType type, SpriteID spriteID, float posX, float posY, b2BodyDef bodyDef, b2FixtureDef fixtureDef);
 	virtual ~Body();
 	Body(const Body& other);
 	Body& operator=(const Body& other);
@@ -163,40 +188,18 @@ struct Body {
 	Body& operator=(const Body&& other);
 
 	virtual void Update(float fElpasedTime);
+	virtual void Draw(Game& game, const olc::vf2d& pos); 
+	
+	static inline b2Shape* GetCircleShape() {
+		static b2CircleShape circle;
+		circle.m_radius = 0.49f;
+		return &circle;
+	}
+	static inline b2Shape* GetRectangleShape() {
+		static b2PolygonShape rect;
+		rect.SetAsBox(0.5f, 0.5f);
+		return &rect;
+	}
 };
-
-// class MyContactListener : public b2ContactListener
-// {
-// 	void BeginContact(b2Contact* contact) {
-// 		//check if fixture A was a Agent
-// 		uintptr_t bodyUserData = contact->GetFixtureA()->GetBody()->GetUserData().pointer;
-// 		if (bodyUserData) {
-// 			Body* body = reinterpret_cast<Body*>(bodyUserData);
-// 			if (body->type == BodyType::PROJECTILE) {
-				
-// 			}
-// 		}
-
-// 		//check if fixture B was a Agent
-// 		bodyUserData = contact->GetFixtureB()->GetBody()->GetUserData().pointer;
-// 		if (bodyUserData)
-// 			reinterpret_cast<Agent*>(bodyUserData)->startContact();
-
-// 	}
-
-// 	void EndContact(b2Contact* contact) {
-
-// 		//check if fixture A was a Agent
-// 		uintptr_t bodyUserData = contact->GetFixtureA()->GetBody()->GetUserData().pointer;
-// 		if (bodyUserData)
-// 		reinterpret_cast<Agent*>(bodyUserData)->endContact();
-
-// 		//check if fixture B was a Agent
-// 		bodyUserData = contact->GetFixtureB()->GetBody()->GetUserData().pointer;
-// 		if (bodyUserData)
-// 		reinterpret_cast<Agent*>(bodyUserData)->endContact();
-
-// 	}
-// };
 
 #endif

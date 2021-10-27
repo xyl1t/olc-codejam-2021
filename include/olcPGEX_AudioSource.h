@@ -61,7 +61,7 @@
 #ifndef OLC_PGEX_AUDIO_SOURCE
 #define OLC_PGEX_AUDIO_SOURCE
 
-#pragma once
+//#pragma once
 #include "olcPGEX_AudioListener.h"
 
 class olcPGEX_AudioSource : public olc::PGEX

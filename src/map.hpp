@@ -1,5 +1,6 @@
 #ifndef MAP_HPP
 #define MAP_HPP
+
 #include "olcPixelGameEngine.h"
 #include "box2d/box2d.h"
 #include <tuple>
@@ -7,36 +8,49 @@
 #include <string>
 #include "player.hpp"
 #include "enemy.hpp"
+#include "agent.hpp"
+#include "projectile.hpp"
+#include <memory>
+#include "myContactListener.hpp"
 
 // NOTE: may be used for multiple levels
+// TODO: is a smart pointer really necessary?
 class Map {
 public: // TODO: change this to private later?
-	std::vector<std::string> data; 
-	std::vector<std::vector<std::vector<Body>>> map;
-	
-	std::vector<Enemy> enemies;
+	std::vector<std::vector<std::vector<std::shared_ptr<Body>>>> map;
 	
 	int width;
 	int height;
 	b2World world;
 	olc::vf2d camera;
-	b2Body* playerBody;
-	olc::vf2d spawnPoint;
-	
+	std::weak_ptr<Player> player{};
+	MyContactListener myContactListener;
 
 public:	
 	Map();
-
-	inline char GetRaw(int x, int y) { return data[x][y]; }
-	inline Body& Get(int x, int y, int layer = 0) { return map[x][y][layer]; }
+	Map(int width, int height);
+	
+	// CHECK: all this needs thorough testing!!!
+	void AddBody(std::shared_ptr<Body> body);
+	std::shared_ptr<Body> RemoveBody(std::weak_ptr<Body> body) { if (auto ptr = body.lock()) return RemoveBody(ptr.get()); else return nullptr; }
+	std::shared_ptr<Body> RemoveBody(Body* body);
+	std::shared_ptr<Body> RemoveBody(int layer, int x, int y);
+	bool ReaddBody(std::weak_ptr<Body> body) { if (auto ptr = body.lock()) return ReaddBody(ptr.get()); else return false; }
+	bool ReaddBody(Body* body);
+	void Load(std::vector<std::string> data, std::shared_ptr<Player> player);
+	
+	void Update(float fElapsedTime);
+	void Draw(Game& game, const olc::vf2d& pos);
+	void Draw(Game& game);
+		
+	inline Body& Get(int x, int y, int layer = 0) { return *map[layer][x][y]; }
 	inline int GetSpriteIndex(int x_in_map, int y_in_map, int layer = 0) {
 		return (int)Get(x_in_map, y_in_map, layer).spriteID;
 	}
-	
-	void Load(std::vector<std::string> data);
 
-	// void AddAgent(Agent& agentToAdd);
-	
+private:
+	void AddBodyOnlyToWorld(Body& body);
+	void RemoveBodyOnlyFromWorld(Body& body);
 };
 
 #endif

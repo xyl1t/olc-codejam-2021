@@ -1,18 +1,16 @@
-//WARNING: THIS IS THE WORST CODE YOU HAVE EVER SEEN ON THE INTERNET, PLEASE LOOK AWAY!!
-
 #include <iostream>
-#include "generation.cpp"
+#include "generation.hpp"
+#include <chrono>
 
-int main(int argc, const char * argv[]) {
-    srand(time(NULL));
-    Generation gen;
-    gen.ProduceMap();
-    
-    //comment this out, if you don't need to see the map
-    for(int j = 0; j < gen.HEIGHT; j++){ 
-        for(int i = 0; i < gen.WIDTH; i++)
-            std::cout << gen.map[j][i];
-        std::cout << std::endl;
-    }
+int main() {
+	auto duration = std::chrono::system_clock::now().time_since_epoch();
+	auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+    srand(millis);
+    Generation gen(48,48,4,4,4,4);
+    if(gen.Start(15,6,10,6,10) == -1)
+        std::cout << "ERROR: The rooms can't fit into the map, decrease the minimum rooms size or the amount" << std::endl;
+    else
+        for(int j = 0; j < gen.HEIGHT; j++)
+            std::cout << gen.map[j] << std::endl;
     return 0;
 }

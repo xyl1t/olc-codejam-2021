@@ -159,7 +159,7 @@
 
 */
 
-#pragma once
+//#pragma once
 
 #ifndef OLC_PGEX_AUDIO_LISTENER
 #define OLC_PGEX_AUDIO_LISTENER

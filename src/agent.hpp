@@ -1,27 +1,24 @@
 #ifndef AGENT_HPP
 #define AGENT_HPP
-#include "box2d/box2d.h"
 #include "body.hpp"
-#include <vector>
-// #include "olcPixelGameEngine.h"
 
+// NOTE: add health to constructor
 class Agent : public Body {
 public:
-	bool alive{true};
 	SpriteID topSpriteID;
 	float directionAngle{};
-	float health;
+	float health{3};
 	float battery;
 	void* currentWeapon;
 
-	Agent();
-	Agent(b2World& world, BodyType type, SpriteID spriteID, float posX = 0.f, float posY = 0.f, b2Shape* shape = nullptr);
+	Agent(BodyType type, SpriteID spriteID, float posX, float posY);
+	Agent(BodyType type, SpriteID spriteID, float posX, float posY, b2BodyDef bodyDef, b2FixtureDef fixtureDef);
 	virtual ~Agent();
 	
 	void Update(float fElpasedTime) override;
+	void Draw(Game& game, const olc::vf2d& pos) override; 
 	
 	virtual void Attack();
-	// void Render(olc::PixelGameEngine& pge);
 };
 
 #endif

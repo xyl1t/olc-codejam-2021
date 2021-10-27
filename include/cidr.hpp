@@ -1,4 +1,4 @@
-#pragma region STB_IMAGE_DECLARATIONS
+//#pragma region STB_IMAGE_DECLARATIONS
 
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
@@ -178,9 +178,9 @@ STBIDEF int   stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const ch
 //
 ////   end header file   /////////////////////////////////////////////////////
 #endif // STBI_INCLUDE_STB_IMAGE_H
-#pragma endregion STB_IMAGE_DECLARATIONS
+//#pragma endregion STB_IMAGE_DECLARATIONS
 
-#pragma region STB_IMAGE_WRITE_DECLARATIONS
+//#pragma region STB_IMAGE_WRITE_DECLARATIONS
 
 #ifndef INCLUDE_STB_IMAGE_WRITE_H
 #define INCLUDE_STB_IMAGE_WRITE_H
@@ -229,7 +229,7 @@ STBIWDEF int stbi_write_jpg_to_func(stbi_write_func *func, void *context, int x,
 STBIWDEF void stbi_flip_vertically_on_write(int flip_boolean);
 
 #endif//INCLUDE_STB_IMAGE_WRITE_H
-#pragma endregion
+//#pragma endregion
 
 // INCLUDES 
 #include <cstdint>
@@ -243,7 +243,7 @@ STBIWDEF void stbi_flip_vertically_on_write(int flip_boolean);
 #include <stdexcept>
 #include <initializer_list>
 
-#pragma region COLOR_HPP
+//#pragma region COLOR_HPP
 /********************************
  * Project: Cidr				*
  * File: color.hpp				*
@@ -556,9 +556,9 @@ else {
 
 return color;*/
 
-#pragma endregion COLOR_HPP
+//#pragma endregion COLOR_HPP
 
-#pragma region BITMAP_HPP
+//#pragma region BITMAP_HPP
 
 /********************************
  * Project: Cidr				*
@@ -765,9 +765,9 @@ using BitmapRGB = Bitmap<RGBA>;
 using BitmapMonochrome = Bitmap<RGBA>;
 */
 
-#pragma endregion BITMAP_HPP
+//#pragma endregion BITMAP_HPP
 
-#pragma region FONT_HPP
+//#pragma region FONT_HPP
 
 /********************************
  * Project: Cidr				*
@@ -840,9 +840,9 @@ extern const TextStyle DefaultTextStyle;
 }
 
 #endif
-#pragma endregion FONT_HPP
+//#pragma endregion FONT_HPP
 
-#pragma region TENSOR_MATH_HPP
+//#pragma region TENSOR_MATH_HPP
 
 /********************************
  * Project: Cidr                *
@@ -1284,9 +1284,9 @@ inline float degrees(float radian) {
 
 #endif /* TENSOR_MATH_HPP */
 
-#pragma endregion TENSOR_MATH_HPP
+//#pragma endregion TENSOR_MATH_HPP
 
-#pragma region POINT_HPP
+//#pragma region POINT_HPP
 
 /********************************
  * Project: Cidr                *
@@ -1368,9 +1368,9 @@ struct FRectangle {
 
 #endif 
 
-#pragma endregion POINT_HPP
+//#pragma endregion POINT_HPP
 
-#pragma region RENDERER_HPP
+//#pragma region RENDERER_HPP
 /********************************
  * Project: Cidr                *
  * File: renderer.hpp           *
@@ -1589,14 +1589,14 @@ inline RGBA alphaBlendColor(uint32_t color1, uint32_t color2) {
 }
 
 #endif
-#pragma endregion RENDERER_HPP
+//#pragma endregion RENDERER_HPP
 
 
 
 #ifdef CIDR_IMPLEMENTATION
 #undef CIDR_IMPLEMENTATION
 
-#pragma region RENDERER_CPP
+//#pragma region RENDERER_CPP
 /********************************
  * Project: Cidr                *
  * File: renderer.cpp           *
@@ -3537,9 +3537,9 @@ void cdr::Renderer::DrawTriangle(const Bitmap& texture, FPoint tp1, FPoint tp2, 
 	}
 }
 #endif
-#pragma endregion RENDERER_CPP
+//#pragma endregion RENDERER_CPP
 
-#pragma region TENSOR_MATH_CPP
+//#pragma region TENSOR_MATH_CPP
 
 /********************************
  * Project: Cidr                *
@@ -4723,9 +4723,9 @@ tem::mat4x4 tem::QuickInverse(const tem::mat4x4& m) {
 	matrix[3][3] = 1.0f;
 	return matrix;
 }
-#pragma endregion TENSOR_MATH_CPP
+//#pragma endregion TENSOR_MATH_CPP
 
-#pragma region BITMAP_CPP
+//#pragma region BITMAP_CPP
 
 /********************************
  * Project: Cidr				*
@@ -4948,9 +4948,9 @@ cdr::RGBBitmap::~RGBBitmap() {}
 // }
 
 
-#pragma endregion BITMAP_CPP
+//#pragma endregion BITMAP_CPP
 
-#pragma region RECTANGLE_CPP
+//#pragma region RECTANGLE_CPP
 
 /********************************
  * Project: Cidr				*
@@ -4967,9 +4967,9 @@ cdr::FRectangle::operator cdr::Rectangle() const {
 	return Rectangle{(int)x, (int)y, (int)width, (int)height};
 }
 
-#pragma endregion RECTANGLE_CPP
+//#pragma endregion RECTANGLE_CPP
 
-#pragma region COLOR_CPP
+//#pragma region COLOR_CPP
 
 /********************************
  * Project: Cidr                *
@@ -5153,9 +5153,9 @@ cdr::RGBA cdr::HSLtoRGB(const HSL& colorHSL) {
 	};
 }
 
-#pragma endregion COLOR_CPP
+//#pragma endregion COLOR_CPP
 
-#pragma region POINT_CPP
+//#pragma region POINT_CPP
 /********************************
  * Project: Cidr                *
  * File: point.cpp              *
@@ -5180,9 +5180,9 @@ cdr::FPoint::operator cdr::Point() const {
 	return {static_cast<int>(x), static_cast<int>(y)};
 }
 
-#pragma endregion POINT_CPP
+//#pragma endregion POINT_CPP
 
-#pragma region FONT_CPP
+//#pragma region FONT_CPP
 
 /********************************
  * Project: Cidr				*
@@ -5331,7 +5331,7 @@ cdr::TextStyle& cdr::TextStyle::operator=(const TextStyle& other) {
 
 const cdr::TextStyle cdr::DefaultTextStyle{};
 
-#pragma region fonts
+//#pragma region fonts
 static constexpr uint8_t Raster8x16Data[]/* = new uint8_t[4096]*/ {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00,
 	0x00, 0x7E, 0x7E, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x78, 0x3C, 0xFC, 0xFE, 0x00, 0x00, 0x81, 0xFF, 0x00, 0x00, 0x18, 0x18, 0x00, 0xFF, 0x00, 0xFF, 0x70, 0x66, 0xCC, 0xC6, 0x18,
@@ -5863,10 +5863,10 @@ const cdr::Font cdr::Fonts::Raster10x10 { Raster10x10Data, 160, 160, 10, 10};
 const cdr::Font cdr::Fonts::Raster10x12 { Raster10x12Data, 160, 192, 10, 12};
 
 const cdr::Font cdr::Fonts::Raster8x12 { Raster8x12Data, 128, 192, 8, 12};
-#pragma endregion fonts
-#pragma endregion FONT_CPP
+//#pragma endregion fonts
+//#pragma endregion FONT_CPP
 
-#pragma region STB_IMAGE_IMPLEMENTATION
+//#pragma region STB_IMAGE_IMPLEMENTATION
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 
@@ -13031,9 +13031,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #endif
-#pragma endregion STB_IMAGE_IMPLEMENTATION
+//#pragma endregion STB_IMAGE_IMPLEMENTATION
 
-#pragma region STB_IMAGE_WRITE_IMPLEMENTATION
+//#pragma region STB_IMAGE_WRITE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #ifdef STB_IMAGE_WRITE_IMPLEMENTATION
 
@@ -14437,6 +14437,6 @@ STBIWDEF int stbi_write_jpg(char const *filename, int x, int y, int comp, const 
 
 #endif // STB_IMAGE_WRITE_IMPLEMENTATION
 
-#pragma endregion STB_IMAGE_WRITE_IMPLEMENTATION
+//#pragma endregion STB_IMAGE_WRITE_IMPLEMENTATION
 
 #endif
