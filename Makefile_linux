@@ -18,7 +18,7 @@ PROJECT := $(BUILDDIR)/$(PROJECTNAME)
 SOURCES := $(wildcard $(SRCDIR)/*.cpp)
 OBJS := $(patsubst $(SRCDIR)/%.cpp,$(BUILDDIR)/%.o,$(SOURCES))
 # CXX := clang++
-CXXFLAGS := -std=c++17 -Iinclude -O2
+CXXFLAGS := -std=c++17 -Iinclude
 LDFLAGS := -Llib
 LDLIBS := -lX11 -lGL -lpthread -lpng -lstdc++fs -lsoloud_static -lbox2d -ldl
 # Include dependencies
@@ -29,12 +29,11 @@ DEPFLAGS = -MMD -MF $(@:.o=.d)
 ### Phony targets ###
 .PHONY: all clean debug web
 .DEFAULT_GOAL := all
+all: CXXFLAGS := $(CXXFLAGS) -O2
 all: $(PROJECT)
-# .PHONY: all multi clean debug web
 # .DEFAULT_GOAL := multi
 # multi: 
 # 	$(MAKE) -j8 all
-# all: $(PROJECT)
 
 
 debug: CXXFLAGS := -std=c++17 -Wall -Iinclude -DDEBUG -g -ggdb3
