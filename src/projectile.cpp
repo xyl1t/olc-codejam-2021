@@ -8,8 +8,8 @@ Projectile::Projectile(float posX, float posY) : Body(true, true, BodyType::PROJ
 
 	fixtureDef.shape = circle;
 	fixtureDef.restitution = 0.5f;
-	fixtureDef.density = 70;
-	bodyDef.linearDamping = 1;
+	fixtureDef.density = 1;
+	bodyDef.linearDamping = 3;
 	bodyDef.angularDamping = 7;	
 }
 Projectile::Projectile(float posX, float posY, b2BodyDef bodyDef, b2FixtureDef fixtureDef) : Body(true, true, BodyType::PROJECTILE, SpriteID::PROJECTILE_RIGHT, posX, posY, bodyDef, fixtureDef) {

@@ -36,7 +36,7 @@ void Agent::Draw(Game& game, const olc::vf2d& pos) {
 void Agent::Attack() {
 	if (map) {
 		b2Vec2 directionVec = {std::cos(directionAngle), std::sin(directionAngle)};
-		b2Vec2 forceVec = {directionVec.x*100000, directionVec.y*100000};
+		b2Vec2 forceVec = {directionVec.x*1000, directionVec.y*1000};
 		b2CircleShape circle;
 		circle.m_radius = 0.125f;
 		
