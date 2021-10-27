@@ -60,7 +60,7 @@ bool Game::OnUserUpdate(float fElapsedTime) {
 		player->Attack();
 	}
 	
-	if (GetKey(olc::Key::F3).bPressed) {
+	if (GetKey(olc::Key::F3).bPressed || (GetKey(olc::Key::D).bPressed && GetKey(olc::Key::CTRL).bPressed)) {
 		debugView = !debugView;
 	}
 	

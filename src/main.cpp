@@ -12,14 +12,13 @@
 #include "game.hpp"
  
 // NOTE: ctrl+j connects lines) 
-/* TODO: 
- * Audio 
- * Are we leaking memory? 👀
- * weak_ptr this pointer for bodies?
- * get body from map using bodyIndex
- * add sleep to bodies, ie their update method will not be called if they are sleeping, they will unsleep only if *something* happens
- * the amount of bullets depends on fps because the faster the game updates the faster the player shoots therfore the more bullets come
- */
+// FIXME: Are we leaking memory? 👀
+// FIXME: the amount of bullets depends on fps because the faster the game updates the faster the player shoots therfore the more bullets come
+// BUG: you can shoot between walls
+// TODO: Audio 
+// TODO: weak_ptr this pointer for bodies?
+// TODO: get body from map using bodyIndex
+// TODO: add sleep to bodies, ie their update method will not be called if they are sleeping, they will unsleep only if *something* happens
 
 int main(int argc, char** argv) {
 	Game game;

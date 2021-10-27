@@ -192,7 +192,7 @@ public:
 	
 	static inline b2Shape* GetCircleShape() {
 		static b2CircleShape circle;
-		circle.m_radius = 0.49f;
+		circle.m_radius = 0.49f; // NOTE: this is so that the agents can move between tight corridores
 		return &circle;
 	}
 	static inline b2Shape* GetRectangleShape() {
