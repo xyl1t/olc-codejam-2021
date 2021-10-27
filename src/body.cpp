@@ -57,7 +57,7 @@ void Body::Update(float fElapsedTime) {
 	
 	// NOTE: turn agent in the direction of his velocity
 	const b2Vec2& vel = (body ? body->GetLinearVelocity() : b2Vec2());
-	if (vel.Length() > 2.f) {
+	if (vel.Length() > 0.1f) {
 		float desired = normalizeAngle(std::atan2(vel.y, vel.x));
 		float smooth{};
 		
