@@ -169,39 +169,3 @@ void Game::DrawSprite(SpriteID spriteID, const olc::vf2d& pos) {
 	);
 #endif
 }
-
-
-/*
-RENDERING ONLY VISIBLE TILES
-NOTICE ONLY RENDERING FIRST LAYER
-NOT OPTIMAL - PROBLEMS WITH RENDERING AGENTS, DOESN'T GIVE ANY PERFORMANCE BOOST...
-for (int layer = 0; layer < 1; layer++) {
-	// for (int x = 0; x < map.map[layer].size(); x++) {
-	// 	for (int y = 0; y < map.map[layer][x].size(); y++) {	
-	for (int x = 0; x < visibleTilesX+1; x++) {
-		for (int y = 0; y < visibleTilesY+1; y++) {	
-			if (x + offsetX < 0 || y + offsetY < 0 || x + offsetX >= map.width || y + offsetY >= map.height) continue;
-
-			if (!map.map[layer][x+offsetX][y+offsetY]) continue;
-			Body& body = *(map.map[layer][x+offsetX][y+offsetY]);
-			
-			olc::vf2d tileLocation;
-			if (layer != 1) {
-				tileLocation = {
-					((float)x * assets.spriteWidth  - tileOffsetX) * constants::windowScale, 
-					((float)y * assets.spriteHeight - tileOffsetY) * constants::windowScale
-				};
-			} else {
-				tileLocation = {
-					((float)body.body->GetPosition().x * assets.spriteWidth - tileOffsetX) * constants::windowScale, 
-					((float)body.body->GetPosition().y * assets.spriteHeight - tileOffsetY) * constants::windowScale
-				};
-			}
-			
-			// if (tileLocation.x + assets.spriteWidth < 0 || tileLocation.y + assets.spriteHeight < 0 || tileLocation.x > GetDrawTargetWidth() || tileLocation.y > GetDrawTargetHeight()) continue;
-			
-			body.Draw(*this, tileLocation);
-		}
-	}
-}
-*/

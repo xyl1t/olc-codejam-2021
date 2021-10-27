@@ -15,6 +15,7 @@
 
 // NOTE: may be used for multiple levels
 // TODO: is a smart pointer really necessary?
+// TODO: add operator[] overload for simpler map access 
 class Map {
 public: // TODO: change this to private later?
 	std::vector<std::vector<std::vector<std::shared_ptr<Body>>>> map;

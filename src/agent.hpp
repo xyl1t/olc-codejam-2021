@@ -7,7 +7,7 @@ class Agent : public Body {
 public:
 	SpriteID topSpriteID;
 	float directionAngle{};
-	float health{3};
+	float health{3}; // NOTE: temporary
 	float battery;
 	void* currentWeapon;
 
